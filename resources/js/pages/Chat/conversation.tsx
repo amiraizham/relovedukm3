@@ -79,14 +79,15 @@ export default function Conversation() {
   };
 
   return (
+    <>
+    <Header />
     <main className="max-w-3xl mx-auto mt-10">
-        <Header />
       <Card>
         <CardHeader className="bg-[#E95670] text-white">
           <CardTitle className="text-lg font-semibold px-6 py-4">Chat with {seller.name}</CardTitle>
         </CardHeader>
 
-        <CardContent
+        <div
           ref={chatBoxRef}
           className="px-6 py-4 h-[400px] overflow-y-auto bg-gray-50"
           id="chat-box"
@@ -116,9 +117,10 @@ export default function Conversation() {
                   </p>
                 </div>
               </div>
+              
             );
           })}
-        </CardContent>
+        </div>
 
         <form
           onSubmit={handleSubmit}
@@ -159,5 +161,6 @@ export default function Conversation() {
         </form>
       </Card>
     </main>
+    </>
   );
 }

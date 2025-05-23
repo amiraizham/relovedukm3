@@ -10,21 +10,31 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Models\Product;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
-    // ✅ Show paginated list of approved + available products
+
     public function index(Request $request)
     {
+        $search = $request->query('search');
         $category = $request->query('category');
         $sort = $request->query('sort');
 
-        $products = Product::where('is_approved', 1)
+        $products = Product::with('user')
+            ->where('is_approved', 1)
             ->where('product_status', '!=', 'sold')
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($subQuery) use ($search) {
+                    $subQuery->where('product_name', 'like', "%$search%")
+                        ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%$search%"));
+                });
+            })
             ->when($category, fn($q) => $q->where('product_category', $category))
             ->when($sort, function ($q) use ($sort) {
                 return match ($sort) {
                     'latest' => $q->orderBy('created_at', 'desc'),
+                    'oldest' => $q->orderBy('created_at', 'asc'),
                     'price_low_high' => $q->orderBy('product_price', 'asc'),
                     'price_high_low' => $q->orderBy('product_price', 'desc'),
                     default => $q,
@@ -37,13 +47,22 @@ class ProductController extends Controller
             'products' => $products->through(fn($product) => [
                 'id' => $product->product_id,
                 'title' => $product->product_name,
-                'image' => $product->product_img ?? null,
                 'price' => $product->product_price,
+                'image' => $product->product_img,
                 'category' => $product->product_category,
                 'created_at' => $product->created_at,
+                'user' => [
+                    'id' => $product->user->id,
+                    'name' => $product->user->name,
+                ],
             ]),
+            'search' => $search,
+            'category' => $category,
+            'sort' => $sort,
         ]);
     }
+
+
 
     // ✅ Show the product sell form
     public function showSellForm()
@@ -105,7 +124,7 @@ class ProductController extends Controller
         }
     }
 
-    // ✅ Edit product
+    //✅ Edit product
     public function edit($id)
     {
         $product = Product::findOrFail($id);
@@ -119,6 +138,7 @@ class ProductController extends Controller
         ]);
     }
 
+
     // ✅ Update product
     public function update(Request $request, $id)
     {
@@ -128,20 +148,19 @@ class ProductController extends Controller
             abort(403);
         }
 
-        $request->validate([
-            'product_name' => 'required|string|max:255',
-            'product_desc' => 'required|string',
-            'product_price' => 'required|numeric|min:0',
-            'product_category' => 'required|string|max:255',
-            'product_img' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+        // Only update fields that are filled (not null or empty string)
+        $data = collect($request->only([
+            'product_name',
+            'product_desc',
+            'product_price',
+            'product_category',
+        ]))->filter(function ($value) {
+            return !is_null($value) && $value !== '';
+        })->toArray();
 
-        $product->update([
-            'product_name' => $request->product_name,
-            'product_desc' => $request->product_desc,
-            'product_price' => $request->product_price,
-            'product_category' => $request->product_category,
-        ]);
+
+        $product->update($data);
+
 
         if ($request->hasFile('product_img')) {
             $file = $request->file('product_img');
@@ -153,7 +172,7 @@ class ProductController extends Controller
             $product->save();
         }
 
-        return redirect()->route('products.details', $product->product_id)->with('success', 'Product updated!');
+        return redirect()->route('products.show', $product->product_id)->with('success', 'Product updated!');
     }
 
     // ✅ Delete product
@@ -169,6 +188,35 @@ class ProductController extends Controller
 
         return redirect()->route('products.index')->with('success', 'Product deleted.');
     }
+
+    public function show($id)
+    {
+        $product = Product::findOrFail($id);
+        $alreadyBooked = Booking::where('product_id', $product->product_id)
+            ->where('buyeruser_id', Auth::id())
+            ->exists();
+
+        return Inertia::render('ProductDetail', [
+            'product' => [
+                'id' => $product->product_id,
+                'title' => $product->product_name,
+                'price' => $product->product_price,
+                'description' => $product->product_desc,
+                'category' => $product->product_category,
+                'image' => $product->product_img,
+                'status' => $product->product_status,
+                'created_at' => $product->created_at,
+                'user_id' => $product->user_id,
+                'user' => [
+                    'name' => $product->user->name,
+                    'avatar' => $product->user->avatar ?? null, // optional fallback
+                ],
+                'alreadyBooked' => $alreadyBooked,
+            ],
+        ]);
+    }
+
+
 
     // ✅ Search by name or description
     public function search(Request $request)

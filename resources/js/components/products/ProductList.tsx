@@ -8,15 +8,17 @@ import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type { Product } from '@/types/Products';
 
+
 dayjs.extend(relativeTime);
 
 type ProductPageProps = {
   products: {
     data: Product[];
   };
+  search?: string;
 };
 
-export default function ProductList({ products }: ProductPageProps) {
+export default function ProductList({ products, search }: ProductPageProps) {
   const [likedProducts, setLikedProducts] = useState<number[]>([]);
   const [animatingHeart, setAnimatingHeart] = useState<number | null>(null);
 
@@ -42,16 +44,24 @@ export default function ProductList({ products }: ProductPageProps) {
   };
 
   if (!products?.data?.length) {
-    return <div className="text-center text-muted-foreground mt-10">No products available.</div>;
+    return (
+      <div className="text-center text-muted-foreground mt-10 text-sm">
+        {search ? `No products found matching "${search}".` : "No products available."}
+      </div>
+    );
   }
+  
 
   return (
     <div className="p-6">
       
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+
+        
         {products.data.map((product) => (
           <Card
+            onClick={() => router.visit(route('products.show', product.id))}
             key={product.id}
             className="rounded-xl overflow-hidden border border-muted shadow-sm hover:shadow-md transition p-3 flex flex-col justify-between h-[340px]"
           >
@@ -87,8 +97,11 @@ export default function ProductList({ products }: ProductPageProps) {
                   {dayjs(product.created_at).fromNow()}
                 </div>
                 <button
-                  onClick={() => toggleFavorite(product.id)}
-                  className={`transition-all duration-200 hover:text-red-500 ${
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFavorite(product.id);
+                  }}                  
+                    className={`transition-all duration-200 hover:text-red-500 ${
                     likedProducts.includes(product.id) && animatingHeart === product.id
                       ? 'animate-pulse text-red-500'
                       : likedProducts.includes(product.id)

@@ -14,7 +14,7 @@ use Inertia\Inertia;
 
 class ChatController extends Controller
 {
-    public function chatList()
+    public function index()
     {
         $userId = Auth::id();
 
@@ -26,42 +26,50 @@ class ChatController extends Controller
             ->latest()
             ->get();
 
-        return Inertia::render('Chat/List', compact('conversations'));
+        return Inertia::render('Chat/list', compact('conversations'));
     }
 
-    public function chatWithUser($otherUserId)
+    public function start($selleruser_id)
     {
-        $userId = Auth::id();
+        $buyeruser_id = Auth::id();
 
-        $users = [$userId, $otherUserId];
-        sort($users);
+        if ($buyeruser_id == $selleruser_id) {
+            abort(403, 'You cannot chat with yourself.');
+        }
 
-        $selleruser_id = $users[0];
-        $buyeruser_id = $users[1];
+        // Check if a conversation already exists in either direction
+        $conversation = Conversation::where(function ($query) use ($selleruser_id, $buyeruser_id) {
+            $query->where('selleruser_id', $selleruser_id)
+                ->where('buyeruser_id', $buyeruser_id);
+        })->orWhere(function ($query) use ($selleruser_id, $buyeruser_id) {
+            $query->where('selleruser_id', $buyeruser_id)
+                ->where('buyeruser_id', $selleruser_id);
+        })->first();
 
-        $conversation = Conversation::firstOrCreate([
-            'selleruser_id' => $selleruser_id,
-            'buyeruser_id' => $buyeruser_id,
-        ]);
+        // If not found, create it
+        if (!$conversation) {
+            $conversation = Conversation::create([
+                'selleruser_id' => $selleruser_id,
+                'buyeruser_id' => $buyeruser_id,
+            ]);
+        }
 
-        Message::where('conversation_id', $conversation->id)
-            ->where('receiver_id', $userId)
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+        $messages = $conversation->messages()->with('sender')->orderBy('created_at')->get();
 
-        $messages = $conversation->messages()->with('sender')->latest()->take(50)->get()->reverse();
+        // Get the "other user" (who you're chatting with)
+        $seller = User::findOrFail(
+            $conversation->selleruser_id === $buyeruser_id
+                ? $conversation->buyeruser_id
+                : $conversation->selleruser_id
+        );
 
-        $otherUser = User::findOrFail($otherUserId);
-
-        return Inertia::render('Chat/Conversation', [
-            'otherUser' => $otherUser,
+        return Inertia::render('Chat/conversation', [
             'conversation' => $conversation,
+            'seller' => $seller,
             'messages' => $messages,
-            'auth' => [
-                'user' => Auth::user(),
-            ],
         ]);
     }
+
 
 
     public function sendMessage(Request $request)

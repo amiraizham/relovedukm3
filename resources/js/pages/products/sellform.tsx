@@ -8,6 +8,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
 
 
 export default function sellform() {
@@ -26,7 +27,7 @@ export default function sellform() {
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files && e.target.files[0] ) {
       setData('product_img', e.target.files[0]);
     }
   };
@@ -40,6 +41,12 @@ export default function sellform() {
   
     post(route('products.store'), {
       forceFormData: true,
+      onSuccess: () => {
+        toast.success('Product submitted for approval!');
+      },
+      onError: () => {
+        toast.error('Failed to submit. Please check the form.');
+      },
     });
   };
   
@@ -88,11 +95,15 @@ export default function sellform() {
               <SelectTrigger id="product_category" className="w-full">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="electronics">Electronics</SelectItem>
-                <SelectItem value="apparel">Apparel</SelectItem>
-                <SelectItem value="books">Books</SelectItem>
-                <SelectItem value="furniture">Furniture</SelectItem>
+              <SelectContent className="bg-white shadow-lg rounded-md">
+                <SelectItem value="Clothes">Clothes</SelectItem>
+                <SelectItem value="Shoes">Shoes</SelectItem>
+                <SelectItem value="Electronics">Electronics</SelectItem>
+                <SelectItem value="Books">Books</SelectItem>
+                <SelectItem value="Sports">Sports</SelectItem>
+                <SelectItem value="Stationary">Stationary</SelectItem>
+                <SelectItem value="Vehicle">Vehicle</SelectItem>
+                <SelectItem value="Others">Others</SelectItem>
                 </SelectContent>
             </Select>
             {errors.product_category && <p className="text-red-600 mt-1">{errors.product_category}</p>}

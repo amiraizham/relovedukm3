@@ -3,6 +3,8 @@ import { Link, usePage } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { router } from "@inertiajs/react";
+import { route } from 'ziggy-js';
+
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,7 +23,9 @@ import {
   HelpCircle,
   Search,
   Settings,
+  EditIcon,
 } from "lucide-react";
+import clsx from "clsx";
 
 type User = {
   id: number;
@@ -36,6 +40,12 @@ const Header = () => {
   const url = page.url;
   const user = page.props.auth?.user as User | undefined;
   const csrfToken = page.props.csrf_token;
+  const [search, setSearch] = React.useState("");
+
+ const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.get(route('dashboard'), { search }, { preserveScroll: true, replace: true });
+  };
 
   return (
     <header className="flex items-center justify-between px-6 py-3 bg-white shadow-sm rounded-b-lg">
@@ -55,14 +65,18 @@ const Header = () => {
             ) : (
             <>
                 <Link href="/dashboard">
-                <NavTab icon={<LayoutGrid size={16} />} label="Home" active={url === "/dashboard"} />
+                <NavTab icon={<LayoutGrid size={16} />} label="Home" active={url.startsWith("/dashboard") || url.startsWith("/products")} />
                 </Link>
                 <Link href="/favourites">
                 <NavTab icon={<Heart size={16} />} label="Favourites" active={url.startsWith("/favourites")} />
                 </Link>
-                <NavTab icon={<ClipboardList size={16} />} label="Chats" active={url.startsWith("/chats")} />
-                <NavTab icon={<Megaphone size={16} />} label="Notifications" active={url.startsWith("/notifications")} />
-                <NavTab icon={<Clock size={16} />} label="Analytics" active={url.startsWith("/analytics")} />
+                <Link href={route('chat.index')}>
+                <NavTab icon={<ClipboardList size={16} />} label="Chats" active={url.startsWith("/chat")} />
+                </Link>
+                <Link href={route('notifications.index')}>
+                <NavTab icon={<Megaphone size={16} />} label="Notifications" active={url.startsWith("/notifications") || url.startsWith("/review")} />
+                </Link>
+                {/*<NavTab icon={<Clock size={16} />} label="Analytics" active={url.startsWith("/analytics")} />*/}
             </>
             )}
         </nav>
@@ -75,24 +89,33 @@ const Header = () => {
           <>
             {/* Search */}
             {user.role !== "admin" && (
-            <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
+              <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
                 type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search..."
                 className="pl-8 w-56 rounded-full text-sm bg-muted"
-                />
-            </div>
+              />
+            </form>
+            
             )}
 
 
             <HelpCircle className="w-5 h-5 text-muted-foreground cursor-pointer" />
-            <Settings className="w-5 h-5 text-muted-foreground cursor-pointer" />
+            {/* <Link href={route("profile.update")} className="flex items-center">
+              <Settings className="w-5 h-5 text-muted-foreground cursor-pointer" />
+             </Link> */}
+            
 
             {/* Avatar Dropdown */}
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button>
+                <button className={clsx(
+        "rounded-full border transition-all",
+        url.startsWith("/profile") && "ring-2 ring-pink-500"
+      )}>
                 <img
                     src="/assets/img/default-profile.jpg"
                     alt="avatar"
@@ -100,11 +123,23 @@ const Header = () => {
                 />
                 </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled className="text-muted-foreground">
-                <User className="mr-2 h-4 w-4" />
-                {user.name}
+            <DropdownMenuContent align="end" className="bg-white shadow-lg rounded-md">
+                <DropdownMenuItem asChild>
+                  <Link href={route("profile.show", { id: user.id })} className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    {user.name}
+                  </Link>
                 </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem asChild>
+                  <Link href={route("profile.update")} className="flex items-center">
+                    <EditIcon className="mr-2 h-4 w-4" />
+                    Edit Profile
+                  </Link>
+                </DropdownMenuItem>
+
                 <DropdownMenuSeparator />
 
                 {/* ✅ Wrap form inside asChild properly */}

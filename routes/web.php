@@ -12,6 +12,10 @@ use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReviewController;
+
 
 Route::get('/', function () {
     return Inertia::render('welcome', [
@@ -39,17 +43,35 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile/show/{id}', [ProfileController::class, 'show'])->name('profile.show');
 
     Route::get('/products/sellform', [ProductController::class, 'showSellForm'])->name('products.sellform');
     Route::post('/products/store', [ProductController::class, 'store'])->name('products.store');
+    Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('/products/{id}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{id}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{id}', [ProductController::class, 'delete'])->name('products.delete');
 
     Route::post('/favorites/{product}', [FavoriteController::class, 'store'])->name('favorites.store');
     Route::delete('/favorites/{product}', [FavoriteController::class, 'destroy'])->name('favorites.destroy');
     Route::get('/favourites', [FavoriteController::class, 'index'])->name('favorites.index');
 
-    Route::get('/chat', [ChatController::class, 'chatList'])->name('chat.list');
-    Route::get('/chat/{otherUserId}', [ChatController::class, 'chatWithUser'])->name('chat.withUser');
+    Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/{selleruser_id}', [ChatController::class, 'start'])->name('chat.seller');
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/{status}', [NotificationController::class, 'updateStatus'])->name('notifications.updateStatus');
+
+    Route::get('/seller/bookings', [BookingController::class, 'sellerBookings'])->name('bookings.seller');
+    Route::post('/bookings/{product}', [BookingController::class, 'store'])->name('bookings.store');
+    Route::post('/bookings/{id}/approve', [BookingController::class, 'approve'])->name('bookings.approve');
+    Route::post('/bookings/{id}/reject', [BookingController::class, 'reject'])->name('bookings.reject');
+    Route::post('/bookings/{id}/sold', [BookingController::class, 'markSold'])->name('bookings.sold');
+
+    Route::get('/review/create/{product}', [ReviewController::class, 'create'])->name('review.create');
+    Route::post('/review/store/{product}', [ReviewController::class, 'store'])->name('review.store');
+    Route::get('/review/view/{product}', [ReviewController::class, 'view'])->name('review.view');
 });
 
 Route::post('/logout', function (Request $request) {
