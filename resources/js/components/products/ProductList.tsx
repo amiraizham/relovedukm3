@@ -7,7 +7,7 @@ import { Heart } from 'lucide-react';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import type { Product } from '@/types/Products';
-
+import type { PageProps } from '@/types';
 
 dayjs.extend(relativeTime);
 
@@ -18,30 +18,80 @@ type ProductPageProps = {
   search?: string;
 };
 
-export default function ProductList({ products, search }: ProductPageProps) {
-  const [likedProducts, setLikedProducts] = useState<number[]>([]);
-  const [animatingHeart, setAnimatingHeart] = useState<number | null>(null);
+function LikedHeartButton({ productId }: { productId: number }) {
+  const [liked, setLiked] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem('liked_products');
-    if (saved) {
-      setLikedProducts(JSON.parse(saved));
-    }
-  }, []);
+    const saved = JSON.parse(localStorage.getItem('liked_products') || '[]');
+    setLiked(saved.includes(productId));
+  }, [productId]);
 
-  const toggleFavorite = async (productId: number) => {
+  const toggleFavorite = async () => {
+    const saved = JSON.parse(localStorage.getItem('liked_products') || '[]');
+    let updated = [...saved];
+
     try {
-      if (likedProducts.includes(productId)) {
+      if (saved.includes(productId)) {
         await router.delete(route('favorites.destroy', productId));
-        setLikedProducts(likedProducts.filter(id => id !== productId));
+        updated = saved.filter((id: number) => id !== productId);
+        setLiked(false);
       } else {
         await router.post(route('favorites.store', productId));
-        setLikedProducts([...likedProducts, productId]);
+        updated.push(productId);
+        setLiked(true);
       }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
+
+      localStorage.setItem('liked_products', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Failed to toggle favorite', err);
     }
   };
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleFavorite();
+      }}
+      className={`p-1 rounded-full transition-colors ${
+        liked ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+      }`}
+      aria-label={liked ? 'Unfavorite' : 'Favorite'}
+    >
+      <Heart className={`w-6 h-6 ${liked ? 'fill-current' : ''}`} />
+    </button>
+  );
+}
+
+
+export default function ProductList({ products, search }: ProductPageProps) {
+  const { auth } = usePage<PageProps>().props;
+
+  //const [likedProducts, setLikedProducts] = useState<number[]>([]);
+  const [animatingHeart, setAnimatingHeart] = useState<number | null>(null);
+
+  // useEffect(() => {
+  //   const saved = localStorage.getItem('liked_products');
+  //   if (saved) {
+  //     setLikedProducts(JSON.parse(saved));
+  //   }
+  // }, []);
+
+  // const toggleFavorite = async (productId: number) => {
+  //   try {
+  //     if (likedProducts.includes(productId)) {
+  //       await router.delete(route('favorites.destroy', productId));
+  //       setLikedProducts(likedProducts.filter(id => id !== productId));
+  //       router.reload({ only: ['products'] });
+  //             } else {
+  //       await router.post(route('favorites.store', productId));
+  //       setLikedProducts([...likedProducts, productId]);
+  //       router.reload({ only: ['products'] });
+  //             }
+  //   } catch (error) {
+  //     console.error('Error toggling favorite:', error);
+  //   }
+  // };
 
   if (!products?.data?.length) {
     return (
@@ -50,20 +100,15 @@ export default function ProductList({ products, search }: ProductPageProps) {
       </div>
     );
   }
-  
 
   return (
     <div className="p-6">
-      
-
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-
-        
         {products.data.map((product) => (
           <Card
             onClick={() => router.visit(route('products.show', product.id))}
             key={product.id}
-            className="rounded-xl overflow-hidden border border-muted shadow-sm hover:shadow-md transition p-3 flex flex-col justify-between h-[340px]"
+            className="rounded-xl overflow-hidden border border-muted shadow-md shadow-gray-300 hover:shadow-md transition p-3 flex flex-col justify-between h-[340px]"
           >
             {/* Image */}
             <div className="relative w-full h-[170px] overflow-hidden rounded-md mb-2">
@@ -96,26 +141,12 @@ export default function ProductList({ products, search }: ProductPageProps) {
                 <div className="text-[11px] text-muted-foreground">
                   {dayjs(product.created_at).fromNow()}
                 </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFavorite(product.id);
-                  }}                  
-                    className={`transition-all duration-200 hover:text-red-500 ${
-                    likedProducts.includes(product.id) && animatingHeart === product.id
-                      ? 'animate-pulse text-red-500'
-                      : likedProducts.includes(product.id)
-                      ? 'text-red-500'
-                      : 'text-muted-foreground'
-                  }`}
-                  aria-label={likedProducts.includes(product.id) ? 'Unlike product' : 'Like product'}
-                >
-                  <Heart
-                    className={`h-6 w-6 ${
-                      likedProducts.includes(product.id) ? 'fill-current' : ''
-                    }`}
-                  />
-                </button>
+
+                {/* 🛑 Hide heart if owner */}
+                {product.user_id !== auth.user.id && (
+                  <LikedHeartButton productId={product.id} />
+                )}
+
               </div>
             </div>
           </Card>
@@ -123,28 +154,4 @@ export default function ProductList({ products, search }: ProductPageProps) {
       </div>
     </div>
   );
-}
-
-
-function getStockVariant(status: string): 'default' | 'destructive' | 'secondary' | 'outline' {
-  switch (status) {
-    case 'in_stock':
-      return 'default';
-    case 'low_stock':
-      return 'secondary';
-    case 'sold':
-    case 'sold_out':
-      return 'destructive';
-    default:
-      return 'outline';
-  }
-}
-
-function formatStockStatus(status: string): string {
-  return {
-    in_stock: 'In Stock',
-    low_stock: 'Low Stock',
-    sold_out: 'Sold Out',
-    sold: 'Sold Out',
-  }[status] || 'Unknown';
 }

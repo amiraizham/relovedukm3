@@ -27,12 +27,21 @@ import {
 } from "lucide-react";
 import clsx from "clsx";
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(' ');
+  const first = parts[0]?.[0] || '';
+  const second = parts[1]?.[0] || '';
+  return (first + second).toUpperCase();
+}
+
+
 type User = {
   id: number;
   name: string;
   email: string;
   // Add other properties as needed
   role: string;
+  avatar?: string;
 };
 
 const Header = () => {
@@ -48,7 +57,7 @@ const Header = () => {
   };
 
   return (
-    <header className="flex items-center justify-between px-6 py-3 bg-white shadow-sm rounded-b-lg">
+    <header className="flex items-center justify-between px-6 py-3 mt-3 mx-2 bg-white shadow-sm shadow-gray-300 border border-slate-200 rounded-full">
       {/* Logo */}
       <div className="flex items-center gap-2 font-bold text-lg">
         <span className="text-pink-600 text-2xl">★</span>
@@ -112,16 +121,23 @@ const Header = () => {
             {/* Avatar Dropdown */}
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <button className={clsx(
-        "rounded-full border transition-all",
-        url.startsWith("/profile") && "ring-2 ring-pink-500"
-      )}>
+            <button
+              className={clsx(
+                "h-9 w-9 flex items-center justify-center rounded-full border text-sm font-semibold bg-pink-100 text-pink-600 transition-all",
+                url.startsWith("/profile") && "ring-2 ring-pink-500"
+              )}
+            >
+              {user.avatar ? (
                 <img
-                    src="/assets/img/default-profile.jpg"
-                    alt="avatar"
-                    className="h-9 w-9 rounded-full border"
+                  src={user.avatar}
+                  alt="avatar"
+                  className="h-9 w-9 rounded-full object-cover"
                 />
-                </button>
+              ) : (
+                getInitials(user.name)
+              )}
+            </button>
+
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="bg-white shadow-lg rounded-md">
                 <DropdownMenuItem asChild>

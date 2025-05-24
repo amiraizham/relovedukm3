@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Models\User;
@@ -25,21 +26,54 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function update(Request $request)
     {
-        $request->user()->fill($request->validated());
+        $user = User::findOrFail(Auth::id());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $request->validate([
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'bio' => 'nullable|string|max:500',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        // Update only if filled
+        if ($request->filled('name')) {
+            $user->name = $request->input('name');
         }
 
-        $request->user()->save();
+        if ($request->filled('email')) {
+            $user->email = $request->input('email');
+        }
 
-        return Redirect::route('profile.edit');
+        if ($request->filled('bio')) {
+            $user->bio = $request->input('bio');
+        }
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar && str_contains($user->avatar, '.amazonaws.com')) {
+                $oldAvatarPath = parse_url($user->avatar, PHP_URL_PATH);
+                $oldAvatarKey = ltrim($oldAvatarPath, '/');
+                Storage::disk('s3')->delete($oldAvatarKey);
+            }
+
+            $file = $request->file('avatar');
+            $fileKey = 'avatars/' . time() . '-' . $file->getClientOriginalName();
+            Storage::disk('s3')->put($fileKey, file_get_contents($file));
+
+            $user->avatar = 'https://'
+                . config('filesystems.disks.s3.bucket')
+                . '.s3.'
+                . config('filesystems.disks.s3.region')
+                . '.amazonaws.com/'
+                . $fileKey;
+        }
+
+        $user->save();
+
+        return redirect()->route('profile.show', ['id' => $user->id])->with('success', 'Profile updated!');
     }
+
 
     /**
      * Delete the user's account.

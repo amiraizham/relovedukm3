@@ -15,6 +15,7 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { useEffect } from 'react';
+import { PlusCircle, PlusIcon } from 'lucide-react';
 
 
 type DashboardProps = PageProps<{
@@ -110,7 +111,7 @@ const handleFilterChange = (
               }}
               
             >
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-[200px] rounded-full shadow-sm">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent className="bg-white shadow-lg rounded-md">
@@ -138,7 +139,7 @@ const handleFilterChange = (
                 }
               >
 
-                <SelectTrigger className="w-[200px]">
+                <SelectTrigger className="w-[200px] rounded-full shadow-sm">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent className="bg-white shadow-lg rounded-md">
@@ -149,7 +150,7 @@ const handleFilterChange = (
                 </SelectContent>
               </Select>
 
-              <Button
+              <Button className="rounded-full shadow-sm"
                 variant="outline"
                 onClick={() => {
                   setSelectedCategory('all');
@@ -166,9 +167,9 @@ const handleFilterChange = (
               {/* Sell Button */}
               <Link
                 href={route('products.sellform')}
-                className="bg-blue-600 text-white px-7 py-2 rounded hover:bg-blue-700 transition"
+                className=" bg-pink-600 text-white px-7 py-2 rounded hover:bg-pink-700 transition rounded-full"
               >
-                Sell
+                 Sell
               </Link>
             </div>
           </div>

@@ -6,7 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import type { PageProps } from '@/types';
+import { Link } from '@inertiajs/react';
 
+function getInitials(name: string): string {
+    const parts = name.trim().split(' ');
+    const first = parts[0]?.[0] || '';
+    const second = parts[1]?.[0] || '';
+    return (first + second).toUpperCase();
+  }
+  
 type Product = {
   id: number;
   title: string;
@@ -46,12 +54,19 @@ export default function Show() {
       <Header />
       <div className="min-h-screen bg-muted py-10">
         {/* Profile Info */}
-        <Card className="max-w-5xl mx-auto p-8 flex flex-col md:flex-row items-center md:items-start gap-5 mb-10">
-          <img
-            src={user.avatar ?? '/assets/img/default-profile.jpg'}
-            alt="Avatar"
-            className="w-28 h-28 object-cover rounded-full border-4 border-pink-500"
-          />
+        <Card className="max-w-5xl mx-auto p-4 flex flex-col md:flex-row items-center md:items-start gap-5 mb-6">
+        {user.avatar ? (
+            <img
+                src={user.avatar}
+                alt="Avatar"
+                className="w-28 h-28 object-cover rounded-full border-4 border-pink-500"
+            />
+            ) : (
+            <div className="w-28 h-28 rounded-full bg-pink-100 text-pink-600 flex items-center justify-center font-semibold text-2xl border-4 border-pink-500">
+                {getInitials(user.name)}
+            </div>
+            )}
+
           <div className="flex-1 space-y-4">
           <h1 className="text-3xl font-bold flex items-center gap-3">
             {user.name}
@@ -65,8 +80,6 @@ export default function Show() {
             </span>
             </h1>
             <ul className="text-muted-foreground text-base">
-              <li><strong>Matric Number:</strong> {user.matricnum}</li>
-              <li><strong>Phone:</strong> {user.phone || 'Not provided'}</li>
               <li><strong>Bio:</strong> {user.bio || 'No bio added'}</li>
             </ul>
 
@@ -92,8 +105,13 @@ export default function Show() {
           <Separator />
           {user.products.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-              {user.products.map(product => (
-                <Card key={product.id} className="p-4 rounded-xl shadow-md hover:shadow-lg transition">
+            {user.products.map(product => (
+            <Link
+                key={product.id}
+                href={route('products.show', product.id)}
+                className="block"
+            >
+                <Card className="p-4 rounded-xl shadow-md hover:shadow-lg transition cursor-pointer">
                 <div className="flex items-center justify-between">
                     {/* Left: Text */}
                     <div className="flex flex-col">
@@ -113,8 +131,9 @@ export default function Show() {
                     )}
                 </div>
                 </Card>
+            </Link>
+            ))}
 
-              ))}
             </div>
           ) : (
             <p className="text-muted-foreground italic mt-4">You have no listings yet.</p>

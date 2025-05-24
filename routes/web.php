@@ -45,6 +45,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/profile/show/{id}', [ProfileController::class, 'show'])->name('profile.show');
 
+
+
     Route::get('/products/sellform', [ProductController::class, 'showSellForm'])->name('products.sellform');
     Route::post('/products/store', [ProductController::class, 'store'])->name('products.store');
     Route::get('/products/{id}', [ProductController::class, 'show'])->name('products.show');

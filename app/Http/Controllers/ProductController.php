@@ -51,6 +51,7 @@ class ProductController extends Controller
                 'image' => $product->product_img,
                 'category' => $product->product_category,
                 'created_at' => $product->created_at,
+                'user_id' => $product->user_id,
                 'user' => [
                     'id' => $product->user->id,
                     'name' => $product->user->name,
