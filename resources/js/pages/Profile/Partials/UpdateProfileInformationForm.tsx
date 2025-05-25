@@ -3,7 +3,7 @@ import InputLabel from '@/components/InputLabel';
 import PrimaryButton from '@/components/PrimaryButton';
 import TextInput from '@/components/TextInput';
 import { Transition } from '@headlessui/react';
-import { Link, useForm, usePage } from '@inertiajs/react';
+import { Link, router, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 import { useEffect, useState } from 'react';
 
@@ -12,6 +12,11 @@ function getInitials(name: string): string {
     const first = parts[0]?.[0] || '';
     const second = parts[1]?.[0] || '';
     return (first + second).toUpperCase();
+  }
+  
+  function getMatricFromEmail(email: string): string | null {
+    const match = email.match(/^([a-zA-Z]\d{6})@siswa\.ukm\.edu\.my$/);
+    return match ? match[1].toUpperCase() : null;
   }
   
 
@@ -25,6 +30,7 @@ export default function UpdateProfileInformation({
     className?: string;
 }) {
     const user = usePage().props.auth.user;
+    const matricNumber = getMatricFromEmail(user.email);
 
     const [initial] = useState({
         name: user.name,
@@ -56,13 +62,14 @@ export default function UpdateProfileInformation({
 
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-
+        console.log('Submitting form data:', data);
         patch(route('profile.update'), {
-            forceFormData: true,
+         
             preserveScroll: true,
             onSuccess: () => {
-                console.log('Profile updated');
-            },
+                router.visit(route('profile.show', { id: user.id }));
+              },
+              
         });
     };
 
@@ -75,56 +82,26 @@ export default function UpdateProfileInformation({
                 </p>
             </header>
 
-            <form onSubmit={submit} className="mt-6 space-y-6" encType="multipart/form-data">
-                {/* Avatar Upload */}
+            <form onSubmit={submit} className="mt-6 space-y-6" >
+                  {/* Static Initials Avatar Display */}
                 <div>
-                    <InputLabel htmlFor="avatar" value="Avatar" />
-                    <input
-                        id="avatar"
-                        type="file"
-                        accept="image/*"
-                        className="mt-1 block w-full"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0] || null;
-                            setData('avatar', file);
-                            if (file) {
-                                setAvatarPreview(URL.createObjectURL(file));
-                            } else {
-                                setAvatarPreview(user.avatar ?? null);
-                            }
-                        }}
-                    />
-                    <InputError className="mt-2" message={errors.avatar} />
-
-                    <div className="mt-4">
-                    {avatarPreview ? (
-                        <>
-                        <img
-                            src={avatarPreview}
-                            alt="Avatar Preview"
-                            className="w-24 h-24 object-cover rounded-full border"
-                        />
-                        <div className="mt-2">
-                            <button
-                            type="button"
-                            onClick={() => {
-                                setData('avatar', null);
-                                setAvatarPreview(null);
-                            }}
-                            className="text-sm text-red-600 hover:underline"
-                            >
-                            Remove selected avatar
-                            </button>
-                        </div>
-                        </>
-                    ) : (
-                        <div className="w-24 h-24 flex items-center justify-center rounded-full bg-pink-100 text-pink-600 text-xl font-semibold border">
+                    <div className="mt-2">
+                    <div className="w-24 h-24 flex items-center justify-center rounded-full bg-pink-100 text-pink-600 text-xl font-semibold border">
                         {getInitials(user.name)}
-                        </div>
-                    )}
                     </div>
-
+                    </div>
                 </div>
+
+                <div>
+                <InputLabel htmlFor="matricnum" value="Matric Number" />
+                <TextInput
+                    id="matricnum"
+                    className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
+                    value={matricNumber ?? 'N/A'}
+                    disabled
+                />
+                </div>
+
 
                 {/* Name Input */}
                 <div>
@@ -132,18 +109,11 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="name"
                         className="mt-1 block w-full"
-                        defaultValue={initial.name}
-                        onChange={(e) => {
-                            const value = e.target.value;
-                            if (value !== initial.name) {
-                                setData('name', value);
-                            } else {
-                                setData('name', undefined);
-                            }
-                        }}
+                        value={data.name ?? ''}
+                        onChange={(e) => setData('name', e.target.value)}
                         isFocused
                         autoComplete="name"
-                    />
+                        />
                     <InputError className="mt-2" message={errors.name} />
                 </div>
 
@@ -153,7 +123,7 @@ export default function UpdateProfileInformation({
                     <TextInput
                         id="email"
                         type="email"
-                        className="mt-1 block w-full"
+                        className="mt-1 block w-full bg-gray-100 cursor-not-allowed"
                         defaultValue={initial.email}
                         onChange={(e) => {
                             const value = e.target.value;
@@ -164,6 +134,7 @@ export default function UpdateProfileInformation({
                             }
                         }}
                         autoComplete="username"
+                        disabled
                     />
                     <InputError className="mt-2" message={errors.email} />
                 </div>
@@ -194,27 +165,29 @@ export default function UpdateProfileInformation({
                 <div>
                 <InputLabel htmlFor="bio" value="Bio" />
                 <textarea
-                    id="bio"
-                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-pink-500 focus:border-pink-500"
-                    defaultValue={initial.bio}
-                    onChange={(e) => {
-                    const value = e.target.value;
-                    if (value !== initial.bio) {
-                        setData('bio', value);
-                    } else {
-                        setData('bio', undefined);
-                    }
-                    }}
-                    rows={4}
+                id="bio"
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                value={data.bio ?? ''}
+                onChange={(e) => setData('bio', e.target.value)}
+                rows={3}
                 />
                 <InputError className="mt-2" message={errors.bio} />
                 </div>
 
                 {/* Save Button */}
                 <div className="flex items-center gap-4">
-                <PrimaryButton disabled={processing || (!data.name && !data.email && !data.avatar)}>
+                <PrimaryButton
+                disabled={
+                    processing ||
+                    (
+                    (data.name === undefined || data.name === initial.name) &&
+                    (data.bio === undefined || data.bio === initial.bio)
+                    )
+                }
+                >
                 Save
                 </PrimaryButton>
+
 
                     <Transition
                         show={recentlySuccessful}

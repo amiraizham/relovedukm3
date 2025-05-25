@@ -11,15 +11,19 @@ class AdminController extends Controller
     public function dashboard()
     {
         $pendingProducts = \App\Models\Product::with('user')
-            ->where('is_approved', 0)
+            ->whereNull('is_approved')
             ->get()
             ->map(function ($product) {
                 return [
                     'id' => $product->product_id,
                     'name' => $product->product_name,
                     'created_at' => $product->created_at->toDateTimeString(),
+                    'user' => [
+                        'email' => $product->user->email,
+                    ],
                 ];
             });
+
 
         return Inertia::render('Admin/Dashboard', [
             'pendingProducts' => $pendingProducts,
@@ -42,5 +46,27 @@ class AdminController extends Controller
         $product->save();
 
         return redirect()->route('admin.dashboard')->with('info', 'Product rejected.');
+    }
+
+
+    public function preview($id)
+    {
+        $product = \App\Models\Product::with('user')->findOrFail($id);
+
+        return Inertia::render('Admin/ProductPreview', [
+            'product' => [
+                'id' => $product->product_id,
+                'name' => $product->product_name,
+                'description' => $product->product_desc,
+                'price' => $product->product_price,
+                'category' => $product->product_category,
+                'image' => $product->product_img,
+                'created_at' => $product->created_at->toDateTimeString(),
+                'user' => [
+                    'name' => $product->user->name,
+                    'email' => $product->user->email,
+                ]
+            ]
+        ]);
     }
 }

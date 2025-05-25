@@ -116,9 +116,16 @@ const toggleFavorite = async () => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                {product.status !== 'sold' ? (
                   <DropdownMenuItem asChild>
                     <Link href={route('products.edit', product.id)}>Edit</Link>
                   </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem disabled>
+                    Edit 
+                  </DropdownMenuItem>
+                )}
+
                   <DropdownMenuItem
                     onClick={() => {
                       if (confirm('Are you sure you want to delete this product?')) {
@@ -144,7 +151,14 @@ const toggleFavorite = async () => {
 
             </div>
 
+            <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold text-gray-900">{product.title}</h1>
+            {product.status === 'sold' && (
+              <Badge className="bg-red-500 text-white font-medium px-3 py-1 rounded-full text-xs border border-pink-300 shadow-sm">
+                Sold
+              </Badge>
+            )}
+          </div>
 
 
 
@@ -163,9 +177,11 @@ const toggleFavorite = async () => {
             {product.user_id !== auth.user.id && (
             <div className="flex gap-4 pt-4">
               <Button
-                onClick={() =>
-                  router.visit(route('chat.seller', { selleruser_id: product.user_id }))
-                }
+                onClick={() => {
+                  router.visit(route('chat.seller', { selleruser_id: product.user_id }), {
+                    preserveScroll: true,
+                  });
+                }}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 Chat

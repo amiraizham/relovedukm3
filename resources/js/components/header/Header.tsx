@@ -44,25 +44,57 @@ type User = {
   avatar?: string;
 };
 
-const Header = () => {
+type HeaderProps = {
+  unreadChats?: boolean;
+};
+
+const Header = ({ unreadChats }: HeaderProps) => {
   const page = usePage();
   const url = page.url;
   const user = page.props.auth?.user as User | undefined;
   const csrfToken = page.props.csrf_token;
   const [search, setSearch] = React.useState("");
+  const hasUnreadChats = page.props.unreadChats as boolean;
 
  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     router.get(route('dashboard'), { search }, { preserveScroll: true, replace: true });
   };
 
+
+
+  const NavTab = ({
+    icon,
+    label,
+    active = false,
+  }: {
+    icon: React.ReactNode;
+    label: React.ReactNode;
+    active?: boolean;
+  }) => {
+    return (
+      <Button
+        variant={active ? "default" : "ghost"}
+        className={`flex items-center gap-1 rounded-full px-4 py-2 text-sm transition-colors duration-200
+          ${active
+            ? "bg-gradient-to-r from-pink-600 to-pink-800 text-white"
+            : "text-muted-foreground hover:bg-pink-100 hover:text-pink-700"}
+        `}
+      >
+        {icon}
+        {label}
+      </Button>
+    );
+  };
+  
+
   return (
     <header className="flex items-center justify-between px-6 py-3 mt-3 mx-2 bg-white shadow-sm shadow-gray-300 border border-slate-200 rounded-full">
       {/* Logo */}
-      <div className="flex items-center gap-2 font-bold text-lg">
-        <span className="text-pink-600 text-2xl">★</span>
-        <span>RelovedUKM</span>
+      <div className="flex items-center gap-2">
+        <img src="/relovedlogoukm.svg" alt="RelovedUKM Logo" className="h-8 w-auto" />
       </div>
+
 
       {/* Navigation Tabs */}
       {user && (
@@ -80,8 +112,26 @@ const Header = () => {
                 <NavTab icon={<Heart size={16} />} label="Favourites" active={url.startsWith("/favourites")} />
                 </Link>
                 <Link href={route('chat.index')}>
-                <NavTab icon={<ClipboardList size={16} />} label="Chats" active={url.startsWith("/chat")} />
-                </Link>
+                <NavTab
+                  icon={<ClipboardList size={16} />}
+                  label={
+                    <span className="relative inline-flex items-center">
+                      Chats
+                      {hasUnreadChats && !url.startsWith("/chat") && (
+                        <>
+                          {/* Red dot with ping effect */}
+                          <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                          <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500" />
+                        </>
+                      )}
+                    </span>
+                  }
+                  active={url.startsWith("/chat")}
+                />
+              </Link>
+
+
+
                 <Link href={route('notifications.index')}>
                 <NavTab icon={<Megaphone size={16} />} label="Notifications" active={url.startsWith("/notifications") || url.startsWith("/review")} />
                 </Link>
@@ -105,7 +155,7 @@ const Header = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search..."
-                className="pl-8 w-56 rounded-full text-sm bg-muted"
+                className="pl-8 w-56 rounded-full text-sm  focus:ring-2 focus:ring-pink-300 transition-all"
               />
             </form>
             
@@ -169,10 +219,10 @@ const Header = () => {
         ) : (
           <>
             <Link href={route("login")}>
-              <Button variant="outline">Log In</Button>
+              <Button className="bg-pink-600 hover:bg-pink-700 text-white"variant="outline">Log In</Button>
             </Link>
             <Link href={route("register")}>
-              <Button>Sign Up</Button>
+              <Button className="hover:bg-gray-100">Sign Up</Button>
             </Link>
           </>
         )}
@@ -187,7 +237,7 @@ const NavTab = ({
   active = false,
 }: {
   icon: React.ReactNode;
-  label: string;
+  label: React.ReactNode;
   active?: boolean;
 }) => {
   return (

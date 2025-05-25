@@ -15,18 +15,24 @@ class FavoriteController extends Controller
 
         $favorites = Favorite::with('product')
             ->where('user_id', $user->id)
-            ->get();
+            ->whereHas('product') // ensures only valid products are paginated
+            ->paginate(8)
+            ->through(function ($fav) {
+                $product = $fav->product;
+
+                return [
+                    'id' => $product->product_id,
+                    'title' => $product->product_name,
+                    'image' => $product->product_img,
+                    'price' => $product->product_price,
+                    'category' => $product->product_category,
+                    'created_at' => $product->created_at,
+                    'user_id' => $product->user_id,
+                ];
+            });
 
         return Inertia::render('Favourites', [
-            'favorites' => $favorites->filter(fn($fav) => $fav->product !== null)  // only keep valid products
-                ->map(fn($fav) => [
-                    'id' => $fav->product->product_id,
-                    'title' => $fav->product->product_name,
-                    'image' => $fav->product->product_img,
-                    'price' => $fav->product->product_price,
-                    'category' => $fav->product->product_category,
-                    'created_at' => $fav->product->created_at,
-                ]),
+            'favorites' => $favorites,
         ]);
     }
 

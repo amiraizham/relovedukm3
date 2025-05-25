@@ -6,6 +6,7 @@ import { route } from 'ziggy-js';
 import type { Product } from '@/types/Products';
 import type { PageProps } from '@/types';
 import { Button } from "@/components/ui/button";
+import { ChevronUp } from 'lucide-react';
 
 import {
   Select,
@@ -20,6 +21,8 @@ import { PlusCircle, PlusIcon } from 'lucide-react';
 
 type DashboardProps = PageProps<{
   products: {
+    next_page_url: any;
+    links: any;
     data: Product[];
   };
   search?: string;
@@ -39,11 +42,31 @@ export default function Dashboard() {
   const productsArray: Product[] = products.data;
   const isSearching = Boolean(search);
   const hasResults = productsArray.length > 0;
-
-  
   const [selectedCategory, setSelectedCategory] = useState(initialCategory || 'all');
   const [selectedSort, setSelectedSort] = useState(initialSort || 'latest');
 
+  const [loadedProducts, setLoadedProducts] = useState<Product[]>(products.data);
+  const [nextPageUrl, setNextPageUrl] = useState(products.next_page_url);
+
+  const loadMore = () => {
+    if (!nextPageUrl) return;
+  
+    router.get(nextPageUrl, {}, {
+      preserveScroll: true,
+      preserveState: true,
+      replace: true,
+      only: ['products'],
+      onSuccess: (page) => {
+        const newProducts = page.props.products as { data: Product[]; next_page_url: any };
+        setLoadedProducts(prev => [...prev, ...newProducts.data]);
+        setNextPageUrl(newProducts.next_page_url);
+  
+        // ✅ Prevent URL from showing ?page=2
+        window.history.replaceState({}, '', route('dashboard'));
+      },
+    });
+  };
+  
 //   useEffect(() => {
 //     setSelectedCategory(initialCategory || 'all');
 //   }, [initialCategory]);
@@ -83,14 +106,14 @@ const handleFilterChange = (
 
       {user ? (
         <>
-          <div className="flex justify-between items-center p-3 flex-wrap gap-4">
+          <div className="flex justify-between items-center pt-7 px-7 flex-wrap gap-2">
             <div>
               <h2 className="text-2xl font-bold">
                 {isSearching
                   ? hasResults
                     ? 'Searched Products'
                     : 'No Products Found'
-                  : 'Available Products'}
+                  : 'Explore Products'}
               </h2>
               <p className="text-sm text-muted-foreground">
                 {isSearching
@@ -174,7 +197,28 @@ const handleFilterChange = (
             </div>
           </div>
 
-          <ProductList products={products} search={search} />
+          <ProductList products={{ data: loadedProducts }} search={search} />
+          {/* Pagination Controls */}
+          {/* Load More Button */}
+          {nextPageUrl ? (
+            <div className="text-center mb-6">
+              <Button onClick={loadMore} className="bg-pink-600 text-white hover:bg-pink-700">
+                Load More
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center mb-10">
+              {!nextPageUrl && (
+                <Button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 bg-pink-600 text-white hover:bg-pink-700 rounded-full px-4 py-2 shadow-lg"
+              >
+                <ChevronUp className="w-5 h-5" />
+              </Button>
+              )}
+            </div>
+          )}
+
         </>
       ) : (
         <div className="text-center mt-10 text-gray-500">

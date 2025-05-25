@@ -25,4 +25,11 @@ class Conversation extends Model
     {
         return $this->belongsTo(User::class, 'buyeruser_id');
     }
+
+    protected static function booted()
+    {
+        static::deleting(function ($conversation) {
+            $conversation->messages()->delete();
+        });
+    }
 }

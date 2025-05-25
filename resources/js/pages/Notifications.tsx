@@ -230,23 +230,25 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
         {/* Rejected Products */}
         <TabsContent value="rejected">
-          <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Rejected Products</h2>
+        <Card className="p-6">
+            <p className="text-md">List of products that were rejected by admin due to the system's guidelines.</p>
             {rejectedProducts.length === 0 ? (
-              <p className="text-muted-foreground italic">No rejected products found.</p>
+            <p className="text-muted-foreground italic">No rejected products found.</p>
             ) : (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {rejectedProducts.map((p) => (
-                  <div key={`rejected-${p.product_id}`} className="border-b py-4">
+                <div key={`rejected-${p.product_id}`} className="border-b py-4 space-y-1">
                     <p className="font-medium">{p.product_name}</p>
-                    <p className="text-sm">  RM {parseFloat(p.product_price).toFixed(2)}</p>
-                    <p className="text-sm text-red-600">Rejected by Admin</p>
-                  </div>
+                    <p className="text-sm">RM {parseFloat(p.product_price).toFixed(2)}</p>
+                    <p className="text-sm text-red-600">❌ Rejected by Admin</p>
+                    <p className="text-sm text-muted-foreground">Reason: Item is not appropriate to display.</p>
+                </div>
                 ))}
-              </div>
+            </div>
             )}
-          </Card>
+        </Card>
         </TabsContent>
+
       </Tabs>
     </div>
     </>

@@ -61,6 +61,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('/chat/{selleruser_id}', [ChatController::class, 'start'])->name('chat.seller');
     Route::post('/chat/send', [ChatController::class, 'sendMessage'])->name('chat.send');
+    Route::delete('/chat/{id}/delete', [ChatController::class, 'destroy'])->name('chat.delete');
+    Route::get('/chat/conversation/{id}', [ChatController::class, 'showConversation'])->name('chat.conversation');
+
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/{status}', [NotificationController::class, 'updateStatus'])->name('notifications.updateStatus');

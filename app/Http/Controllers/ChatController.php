@@ -18,15 +18,27 @@ class ChatController extends Controller
     {
         $userId = Auth::id();
 
-        $conversations = Conversation::where('selleruser_id', $userId)
+        $conversations = Conversation::with([
+            'seller',
+            'buyer',
+            'messages' => function ($q) {
+                $q->latest()->limit(1); // ✅ Fetch only the latest message
+            }
+        ])
+            ->where('selleruser_id', $userId)
             ->orWhere('buyeruser_id', $userId)
-            ->with(['seller', 'buyer', 'messages' => function ($query) {
-                $query->latest()->limit(1);
-            }])
             ->latest()
             ->get();
 
-        return Inertia::render('Chat/list', compact('conversations'));
+        $hasUnreadChats = Message::where('receiver_id', $userId)
+            ->where('is_read', false)
+            ->exists();
+
+        return Inertia::render('ChatPage', [
+            'conversations' => $conversations,
+            'authUser' => Auth::user(),
+            'unreadChats' => $hasUnreadChats,
+        ]);
     }
 
     public function start($selleruser_id)
@@ -37,56 +49,51 @@ class ChatController extends Controller
             abort(403, 'You cannot chat with yourself.');
         }
 
-        // Check if a conversation already exists in either direction
-        $conversation = Conversation::where(function ($query) use ($selleruser_id, $buyeruser_id) {
-            $query->where('selleruser_id', $selleruser_id)
-                ->where('buyeruser_id', $buyeruser_id);
-        })->orWhere(function ($query) use ($selleruser_id, $buyeruser_id) {
-            $query->where('selleruser_id', $buyeruser_id)
-                ->where('buyeruser_id', $selleruser_id);
-        })->first();
+        // Create conversation if not exists
+        $conversation = Conversation::firstOrCreate([
+            'selleruser_id' => min($selleruser_id, $buyeruser_id),
+            'buyeruser_id' => max($selleruser_id, $buyeruser_id),
+        ]);
 
-        // If not found, create it
-        if (!$conversation) {
-            $conversation = Conversation::create([
-                'selleruser_id' => $selleruser_id,
-                'buyeruser_id' => $buyeruser_id,
-            ]);
-        }
+        // Load all user's conversations
+        $conversations = Conversation::where('selleruser_id', $buyeruser_id)
+            ->orWhere('buyeruser_id', $buyeruser_id)
+            ->with([
+                'seller',
+                'buyer',
+                'messages' => function ($q) {
+                    $q->latest()->limit(1);
+                }
+            ])
+            ->latest()
+            ->get();
 
-        $messages = $conversation->messages()->with('sender')->orderBy('created_at')->get();
-
-        // Get the "other user" (who you're chatting with)
-        $seller = User::findOrFail(
-            $conversation->selleruser_id === $buyeruser_id
-                ? $conversation->buyeruser_id
-                : $conversation->selleruser_id
-        );
-
-        return Inertia::render('Chat/conversation', [
-            'conversation' => $conversation,
-            'seller' => $seller,
-            'messages' => $messages,
+        return Inertia::render('ChatPage', [
+            'conversations' => $conversations,
+            'authUser' => Auth::user(),
+            // ❌ no 'conversation'
+            // ❌ no 'messages'
         ]);
     }
-
-
 
     public function sendMessage(Request $request)
     {
         $request->validate([
-            'conversation_id' => 'required|exists:conversations,id',
+            'conversation_id' => 'nullable|exists:conversations,id',
+            'selleruser_id' => 'required|exists:users,id',
             'message' => 'nullable|string',
             'photo' => 'nullable|image|max:5120',
         ]);
 
-        $conversation = Conversation::findOrFail($request->conversation_id);
-
         $senderId = Auth::id();
-        // Identify receiver as the other user in the conversation
-        $receiverId = $conversation->selleruser_id === $senderId
-            ? $conversation->buyeruser_id
-            : $conversation->selleruser_id;
+        $receiverId = $request->selleruser_id;
+
+        $conversation = Conversation::firstOrCreate(
+            [
+                ['selleruser_id', min($senderId, $receiverId)],
+                ['buyeruser_id', max($senderId, $receiverId)],
+            ]
+        );
 
         $message = new Message();
         $message->conversation_id = $conversation->id;
@@ -108,6 +115,46 @@ class ChatController extends Controller
 
         broadcast(new MessageSent($message))->toOthers();
 
-        return back();
+        // ✅ Redirect to the conversation page again
+        return to_route('chat.seller', ['selleruser_id' => $receiverId]);
+    }
+
+    public function showConversation($id)
+    {
+        $conversation = Conversation::with(['seller', 'buyer', 'messages.sender'])->findOrFail($id);
+
+        // ✅ Mark unread messages as read
+        Message::where('conversation_id', $id)
+            ->where('receiver_id', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return Inertia::render('ChatPage', [
+            'conversation' => $conversation,
+            'messages' => $conversation->messages,
+            'authUser' => Auth::user(),
+        ]);
+    }
+
+
+
+    public function destroy($id)
+    {
+        $userId = Auth::id();
+
+        $conversation = Conversation::findOrFail($id);
+
+        // Only allow deletion if the user is part of the conversation
+        if ($conversation->selleruser_id !== $userId && $conversation->buyeruser_id !== $userId) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Delete all messages first (if cascading isn't set in DB)
+        $conversation->messages()->delete();
+
+        // Then delete the conversation
+        $conversation->delete();
+
+        return redirect()->route('chat.index')->with('success', 'Conversation deleted.');
     }
 }

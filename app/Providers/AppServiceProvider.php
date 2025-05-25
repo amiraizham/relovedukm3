@@ -23,10 +23,18 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
         Inertia::share([
             'auth' => fn() => [
                 'user' => Auth::user(),
             ],
+
+            // ✅ Add unread chat notification status
+            'unreadChats' => fn() => Auth::check()
+                ? \App\Models\Message::where('receiver_id', Auth::id())
+                ->where('is_read', false)
+                ->exists()
+                : false,
         ]);
     }
 }

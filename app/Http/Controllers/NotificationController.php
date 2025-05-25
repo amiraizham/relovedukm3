@@ -8,12 +8,20 @@ use App\Models\Booking;
 use App\Models\Product;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Review;
+use App\Mail\BookingStatusMail;
+use Illuminate\Support\Facades\Mail;
+
 
 class NotificationController extends Controller
 {
     public function index()
     {
         $userId = Auth::id();
+
+        if (!$userId) {
+            return redirect()->route('login')->with('error', 'Please log in to access your notifications.');
+        }
+
 
         $buyerNotifications = Booking::with(['product', 'seller'])
             ->where('buyeruser_id', $userId)
@@ -77,11 +85,12 @@ class NotificationController extends Controller
             ->get()
             ->map(function ($product) {
                 return [
-                    'id' => $product->product_id, // map product_id to id
-                    'title' => $product->product_name,
-                    'price' => $product->product_price,
+                    'product_id' => $product->product_id,
+                    'product_name' => $product->product_name,
+                    'product_price' => $product->product_price,
                 ];
             });
+
 
         return Inertia::render('Notifications', [
             'buyerNotifications' => $buyerNotifications,
@@ -101,7 +110,7 @@ class NotificationController extends Controller
             return back()->with('error', 'Invalid status.');
         }
 
-        $booking = Booking::findOrFail($id);
+        $booking = Booking::with(['buyer', 'product'])->findOrFail($id);
 
         if ($booking->selleruser_id !== Auth::id()) {
             return back()->with('error', 'You are not the seller of this product.');
@@ -109,6 +118,11 @@ class NotificationController extends Controller
 
         $booking->status = $status;
         $booking->save();
+
+        // ✅ Send email to buyer if status is approved or rejected
+        if (in_array($status, ['approved', 'rejected'])) {
+            Mail::to($booking->buyer->email)->send(new BookingStatusMail($booking));
+        }
 
         return redirect()->route('notifications.index')->with('success', 'Booking status updated.');
     }

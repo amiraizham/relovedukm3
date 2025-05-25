@@ -3,12 +3,15 @@ import { usePage, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/header/Header';
+import { toast } from 'sonner';
 
 type Product = {
   id: number;
   name: string;
-  matricnum: string;
   created_at: string;
+  user: {
+    email: string;
+  };
 };
 
 type User = {
@@ -29,12 +32,31 @@ export default function AdminDashboard() {
   const { pendingProducts } = usePage<PageProps>().props;
 
   const handleApprove = (id: number) => {
-    router.post(route('admin.products.approve', id));
+    router.post(
+      route('admin.products.approve', id),
+      {},
+      {
+        onSuccess: () => toast.success("Product approved successfully."),
+        onError: () => toast.error("Failed to approve product."),
+      }
+    );
   };
+  
 
   const handleReject = (id: number) => {
-    router.post(route('admin.products.reject', id));
+    const confirmed = window.confirm("Are you sure you want to reject this product?");
+    if (confirmed) {
+      router.post(
+        route('admin.products.reject', id),
+        {},
+        {
+          onSuccess: () => toast.success("Product rejected successfully."),
+          onError: () => toast.error("Failed to reject product."),
+        }
+      );
+    }
   };
+  
 
   return (
     <>
@@ -50,7 +72,7 @@ export default function AdminDashboard() {
                 <th className="px-4 py-2">Action ID</th>
                 <th className="px-4 py-2">Product ID</th>
                 <th className="px-4 py-2">Product Name</th>
-                <th className="px-4 py-2">Seller Matricnum</th>
+                <th className="px-4 py-2">Seller's Email</th>
                 <th className="px-4 py-2">Action</th>
                 <th className="px-4 py-2">Timestamp</th>
               </tr>
@@ -70,7 +92,7 @@ export default function AdminDashboard() {
                       <a href={route('admin.products.preview', product.id)}>{product.id}</a>
                     </td>
                     <td className="px-4 py-2">{product.name}</td>
-                    <td className="px-4 py-2">{product.matricnum}</td>
+                    <td className="px-4 py-2">{product.user.email}</td>
                     <td className="px-4 py-2 space-x-2">
                     <Button
                     size="sm"

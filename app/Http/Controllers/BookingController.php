@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Booking;
 use App\Models\Product;
+use App\Mail\BookingRequestMail;
+use App\Mail\BookingStatusMail;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 
 class BookingController extends Controller
@@ -24,12 +27,16 @@ class BookingController extends Controller
             return back()->with('error', 'This product is already sold.');
         }
 
-        Booking::create([
+        $booking = Booking::create([
             'product_id' => $product->product_id,
             'buyeruser_id' => $user->id,
             'selleruser_id' => $product->user_id,
             'status' => 'pending',
         ]);
+
+        $booking->load(['product', 'buyer']);
+
+        Mail::to($booking->product->user->email)->send(new BookingRequestMail($booking));
 
         return back()->with('success', 'Booking request sent to the seller.');
     }
@@ -57,6 +64,10 @@ class BookingController extends Controller
         $booking->status = 'approved';
         $booking->save();
 
+        $booking->load(['product', 'buyer']);
+
+        Mail::to($booking->buyer->email)->send(new BookingStatusMail($booking));
+
         return back()->with('success', 'Booking approved.');
     }
 
@@ -69,8 +80,13 @@ class BookingController extends Controller
         $booking->status = 'rejected';
         $booking->save();
 
+        $booking->load(['product', 'buyer']);
+
+        Mail::to($booking->buyer->email)->send(new BookingStatusMail($booking));
+
         return back()->with('info', 'Booking rejected.');
     }
+
 
     // ✅ Mark product as sold by seller
     public function markSold($bookingId)

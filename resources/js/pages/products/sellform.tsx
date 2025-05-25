@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
+import { ImagePlus } from 'lucide-react';
 
 
 export default function sellform() {
@@ -127,31 +128,52 @@ export default function sellform() {
 
             {/* Image Upload */}
             <div className="space-y-2">
-            <Label htmlFor="product_img">Upload Product Image</Label>
-            <Input
-                id="product_img"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-            />
-            {errors.product_img && (
+              <Label htmlFor="product_img">Upload Product Image</Label>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="product_img"
+                  className="cursor-pointer inline-flex items-center p-2 rounded-md border border-gray-300 hover:bg-gray-100 transition"
+                >
+                  <ImagePlus className="w-5 h-5 text-pink-600" />
+                  <span className="ml-2 text-sm text-pink-600">Choose Image</span>
+                </label>
+
+                {/* Display selected file name if available */}
+                {data.product_img && (
+                  <span className="text-sm text-gray-700 truncate max-w-[200px]">
+                    {data.product_img.name}
+                  </span>
+                )}
+
+                <input
+                  id="product_img"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
+
+              {errors.product_img && (
                 <p className="text-sm text-red-600">{errors.product_img}</p>
-            )}
+              )}
             </div>
 
 
+
+
             <Button asChild disabled={processing} className="w-full">
-  <button
-    type="submit"
-    className={`w-full font-semibold text-white py-2 px-4 rounded-lg transition-all duration-300
-      ${processing
-        ? 'bg-gray-400 cursor-not-allowed'
-        : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-indigo-700 hover:to-blue-700 shadow-md hover:shadow-lg'
-      }`}
-  >
-    {processing ? 'Submitting...' : 'Submit Product'}
-  </button>
-</Button>
+            <button
+              type="submit"
+              className={`w-full font-semibold text-white py-2 px-4 rounded-lg transition-all duration-300
+                ${processing
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-gradient-to-r bg-pink-600 shadow-md hover:shadow-lg'
+                }`}
+            >
+              {processing ? 'Submitting...' : 'Submit Product'}
+            </button>
+          </Button>
 
 
         </form>

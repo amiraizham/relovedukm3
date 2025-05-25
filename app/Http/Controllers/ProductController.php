@@ -114,7 +114,6 @@ class ProductController extends Controller
                 'product_price' => $request->product_price,
                 'product_category' => $request->product_category,
                 'product_img' => $imageUrl,
-                'is_approved' => 0,
                 'product_status' => 'available',
             ]);
 
