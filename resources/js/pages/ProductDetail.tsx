@@ -25,7 +25,7 @@ function getInitials(name: string): string {
 }
 
 export default function ProductDetail() {
-  const { product, auth, alreadyBooked } = usePage<PageProps<{ product: Product }>>().props;
+  const { product, auth, alreadyBooked, approvedBooking } = usePage<PageProps<{ product: Product }>>().props;
   const isOwner = product.user_id === auth.user.id;
   const [liked, setLiked] = useState<boolean>(false);
 
@@ -54,21 +54,28 @@ const toggleFavorite = async () => {
   }
 };
 
-  const handleBookItem = (productId: number) => {
-    const formData = new FormData();
-    formData.append('product_id', productId.toString());
-  
-    router.post(route('bookings.store', productId), formData, {
-      forceFormData: true,
-      preserveScroll: true,
-      onSuccess: () => {
-        toast.success('Booking request sent successfully!');
-      },
-      onError: () => {
-        toast.error('Failed to book item. Please try again.');
-      },
-    });
-  };
+const handleBookItem = (productId: number) => {
+  const formData = new FormData();
+  formData.append('product_id', productId.toString());
+
+  router.post(route('bookings.store', productId), formData, {
+    forceFormData: true,
+    preserveScroll: true,
+    onSuccess: () => {
+      toast.success('You’ve booked this item. Your booking is valid for 2 hours.', {
+        action: {
+          label: 'View Booking',
+          onClick: () => {
+            router.visit(route('notifications.index', { id: auth.user.id }));
+          },
+        },
+      });
+    },
+    onError: () => {
+      toast.error('Failed to book item. Please try again.');
+    },
+  });
+};
 
   return (
     <>
@@ -187,24 +194,25 @@ const toggleFavorite = async () => {
                 Chat
               </Button>
 
-              {alreadyBooked ? (
-                <Button
-                  disabled
-                  className="bg-gray-400 text-white cursor-not-allowed"
-                >
-                  Booked
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => handleBookItem(product.id)}                    
-                  className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2"
-                >
-                  Book Item
-                </Button>
-              )}
+              {product.alreadyBooked || product.approvedBooking ? (
+              <Button
+                disabled
+                className="bg-gray-400 text-white cursor-not-allowed"
+              >
+                {product.approvedBooking ? 'Booking Approved' : 'Booked'}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => handleBookItem(product.id)}
+                className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2"
+              >
+                Book Item
+              </Button>
+            )}
 
             </div>
           )}
+
 
           </div>
         </div>

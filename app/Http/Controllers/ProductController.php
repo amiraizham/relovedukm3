@@ -10,7 +10,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use App\Models\Product;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ProductApprovalMail;
+use Carbon\Carbon;
+
 
 class ProductController extends Controller
 {
@@ -86,15 +91,6 @@ class ProductController extends Controller
             'product_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // // ✅ Debug point 1: check entire request content
-        // dd($request->all());
-
-        // // ✅ Debug point 2 (optional): explicitly check for file
-        // if (!$request->hasFile('product_img')) {
-        //     Log::error('Image not received.');
-        //     return back()->with('error', 'Image file missing from request.');
-        // }
-
         try {
             $file = $request->file('product_img');
             $fileKey = 'products/' . time() . '-' . $file->getClientOriginalName();
@@ -107,7 +103,7 @@ class ProductController extends Controller
             $imageUrl = 'https://' . config('filesystems.disks.s3.bucket') .
                 '.s3.' . config('filesystems.disks.s3.region') . '.amazonaws.com/' . $fileKey;
 
-            Product::create([
+            $product = Product::create([
                 'user_id' => Auth::id(),
                 'product_name' => $request->product_name,
                 'product_desc' => $request->product_desc,
@@ -116,6 +112,15 @@ class ProductController extends Controller
                 'product_img' => $imageUrl,
                 'product_status' => 'available',
             ]);
+
+
+            if ($product->is_approved === null) {
+                $adminUsers = User::where('role', 'admin')->pluck('email'); // get all admin emails
+
+                foreach ($adminUsers as $adminEmail) {
+                    Mail::to($adminEmail)->send(new ProductApprovalMail($product));
+                }
+            }
 
             return redirect()->route('dashboard')->with('success', 'Product submitted for approval.');
         } catch (\Exception $e) {
@@ -186,15 +191,32 @@ class ProductController extends Controller
 
         $product->delete();
 
-        return redirect()->route('products.index')->with('success', 'Product deleted.');
+        return redirect()->route('profile.show', Auth::id())->with('success', 'Product deleted.');
     }
 
     public function show($id)
     {
         $product = Product::findOrFail($id);
-        $alreadyBooked = Booking::where('product_id', $product->product_id)
-            ->where('buyeruser_id', Auth::id())
-            ->exists();
+        $activeBooking = Booking::where('product_id', $product->product_id)
+            ->whereNotIn('status', ['rejected', 'sold'])
+            ->latest()
+            ->first();
+
+        $alreadyBooked = false;
+        $approvedBooking = false;
+
+        if ($activeBooking) {
+            $bookingTime = Carbon::parse($activeBooking->created_at);
+            if ($bookingTime->diffInMinutes(now()) < 1) {
+                $alreadyBooked = true;
+            }
+
+            // Check if this booking is approved for the current user
+            if (Auth::id() === $activeBooking->buyeruser_id && $activeBooking->status === 'approved') {
+                $approvedBooking = true;
+            }
+        }
+
 
         return Inertia::render('ProductDetail', [
             'product' => [
@@ -212,6 +234,7 @@ class ProductController extends Controller
                     'avatar' => $product->user->avatar ?? null, // optional fallback
                 ],
                 'alreadyBooked' => $alreadyBooked,
+                'approvedBooking' => $approvedBooking,
             ],
         ]);
     }

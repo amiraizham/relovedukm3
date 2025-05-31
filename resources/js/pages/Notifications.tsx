@@ -26,17 +26,45 @@ type Booking = {
     product_id: number;
     product_name: string;
     product_price: string;
+    rejection_reason?: string; // ✅ add this line
   };
+  
 
 export default function Notifications() {
-  const { buyerNotifications, sellerNotifications, rejectedProducts, authUserId } = usePage<
-    PageProps<{
-      buyerNotifications: Booking[];
-      sellerNotifications: Booking[];
-      rejectedProducts: Product[];
-      authUserId: number;
-    }>
-  >().props;
+    const { 
+        buyerNotifications, 
+        sellerNotifications, 
+        rejectedProducts, 
+        authUserId, 
+        hasNewRequests, 
+        hasBookingUpdates,
+        hasNewRejected,
+      } = usePage<
+        PageProps<{
+          buyerNotifications: Booking[];
+          sellerNotifications: Booking[];
+          rejectedProducts: Product[];
+          authUserId: number;
+          hasNewRequests: boolean;
+          hasBookingUpdates: boolean;
+        hasNewRejected: boolean;  
+
+        }>
+      >().props;
+
+      const [selectedTab, setSelectedTab] = React.useState('buyer');
+
+        const [rejectedViewed, setRejectedViewed] = React.useState(false);
+
+        React.useEffect(() => {
+        if (selectedTab === 'rejected') {
+            setRejectedViewed(true);
+        }
+        }, [selectedTab]);
+
+        const showRejectedDot = hasNewRejected && !rejectedViewed;
+
+      
 const { csrf_token } = usePage().props;
 
   const TabsTrigger = React.forwardRef<
@@ -59,6 +87,7 @@ const { csrf_token } = usePage().props;
   />
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+const hasRejectedProducts = rejectedProducts.length > 0;
 
 
   return (
@@ -66,11 +95,39 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
       <Header />
     <div className="max-w-6xl mx-auto py-10">
 
-      <Tabs defaultValue="buyer" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-muted">
-          <TabsTrigger value="buyer">My Bookings</TabsTrigger>
-          <TabsTrigger value="seller">Booking Requests</TabsTrigger>
-          <TabsTrigger value="rejected">Rejected Products</TabsTrigger>
+    <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+    <TabsList className="grid w-full grid-cols-3 bg-muted">
+
+        <TabsTrigger value="buyer">
+        <span className="relative inline-flex items-center">
+            My Bookings
+            {hasBookingUpdates && (
+            <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+            )}
+        </span>
+        </TabsTrigger>
+
+        <TabsTrigger value="seller">
+        <span className="relative inline-flex items-center">
+            Booking Requests
+            {hasNewRequests && (
+            <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+            )}
+        </span>
+        </TabsTrigger>
+
+        <TabsTrigger value="rejected">
+        <span className="relative inline-flex items-center">
+            Rejected Products
+            {showRejectedDot && (
+
+            <>
+                <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                <span className="absolute -top-1 -right-2 h-2 w-2 rounded-full bg-red-500" />
+            </>
+            )}
+        </span>
+        </TabsTrigger>
         </TabsList>
 
         {/* Buyer Notifications */}
@@ -241,8 +298,10 @@ TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
                     <p className="font-medium">{p.product_name}</p>
                     <p className="text-sm">RM {parseFloat(p.product_price).toFixed(2)}</p>
                     <p className="text-sm text-red-600">❌ Rejected by Admin</p>
-                    <p className="text-sm text-muted-foreground">Reason: Item is not appropriate to display.</p>
-                </div>
+                    <p className="text-sm text-muted-foreground">
+                    Reason: {p.rejection_reason || 'Not specified'}
+                    </p>                
+                    </div>
                 ))}
             </div>
             )}

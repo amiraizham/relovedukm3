@@ -36,7 +36,7 @@ class BookingRequestMail extends Mailable
                     border: 1px solid #e2e8f0;
                 '>
                     <h2 style='color: #111827; font-size: 20px; font-weight: 600; margin-bottom: 16px;'>
-                        Someone is interested in your item!
+                        Someone is interested in your item! Please Approve or Reject this item within 2 hours for a seamless process.
                     </h2>
 
                     <p style='color: #4b5563; font-size: 14px; margin: 0 0 8px 0;'>

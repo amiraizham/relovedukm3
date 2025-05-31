@@ -10,14 +10,23 @@ use App\Mail\BookingRequestMail;
 use App\Mail\BookingStatusMail;
 use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-    // 🟩 Store new booking
+
+
     public function store($productId, Request $request)
     {
+        set_time_limit(60);
         $user = Auth::user();
         $product = Product::findOrFail($productId);
+
+        // Auto-delete expired bookings older than 1 minute
+        Booking::where('status', 'pending')
+            ->where('created_at', '<', Carbon::now()->subSeconds(60)->toDateTimeString())
+            ->delete();
+
 
         if ($product->user_id === $user->id) {
             return back()->with('error', 'You cannot book your own product.');
@@ -27,6 +36,27 @@ class BookingController extends Controller
             return back()->with('error', 'This product is already sold.');
         }
 
+        // 🚫 Prevent duplicate bookings by this user (except rejected ones)
+        $userAlreadyBooked = Booking::where('product_id', $productId)
+            ->where('buyeruser_id', $user->id)
+            ->whereNotIn('status', ['rejected'])
+            ->exists();
+
+        if ($userAlreadyBooked) {
+            return back()->with('error', 'You have already booked this item.');
+        }
+
+        // ⏳ Check for existing active bookings within the last minute
+        $activeBooking = Booking::where('product_id', $productId)
+            ->whereNotIn('status', ['rejected', 'sold'])
+            ->latest()
+            ->first();
+
+        if ($activeBooking && Carbon::parse($activeBooking->created_at)->diffInMinutes(now()) < 1) {
+            return back()->with('error', 'This product is temporarily booked. Try again later.');
+        }
+
+        // ✅ Store new booking
         $booking = Booking::create([
             'product_id' => $product->product_id,
             'buyeruser_id' => $user->id,
@@ -34,12 +64,13 @@ class BookingController extends Controller
             'status' => 'pending',
         ]);
 
-        $booking->load(['product', 'buyer']);
-
+        // ✉️ Notify the seller
         Mail::to($booking->product->user->email)->send(new BookingRequestMail($booking));
 
-        return back()->with('success', 'Booking request sent to the seller.');
+        return back()->with('success', 'You have booked this item. Your booking is valid for 2 hours.');
     }
+
+
 
     // 🟨 View bookings for the seller
     public function sellerBookings()

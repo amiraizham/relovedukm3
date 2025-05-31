@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Review;
 use App\Mail\BookingStatusMail;
 use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon; // ⬅ make sure this is imported
+
 
 
 class NotificationController extends Controller
@@ -17,14 +19,21 @@ class NotificationController extends Controller
     public function index()
     {
         $userId = Auth::id();
+        $now = Carbon::now();
 
         if (!$userId) {
             return redirect()->route('login')->with('error', 'Please log in to access your notifications.');
         }
 
-
         $buyerNotifications = Booking::with(['product', 'seller'])
             ->where('buyeruser_id', $userId)
+            ->where(function ($query) use ($now) {
+                $query->where('status', '!=', 'pending') // show non-pending bookings
+                    ->orWhere(function ($q) use ($now) {
+                        $q->where('status', 'pending')
+                            ->where('created_at', '>=', $now->copy()->subMinute()); // only pending within 2 hours
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($booking) use ($userId) {
@@ -53,6 +62,13 @@ class NotificationController extends Controller
 
         $sellerNotifications = Booking::with(['product', 'buyer'])
             ->where('selleruser_id', $userId)
+            ->where(function ($query) use ($now) {
+                $query->where('status', '!=', 'pending') // keep sold/approved
+                    ->orWhere(function ($q) use ($now) {
+                        $q->where('status', 'pending')
+                            ->where('created_at', '>=', $now->copy()->subMinute()); // only pending within 2 hours
+                    });
+            })
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($booking) {
@@ -77,6 +93,7 @@ class NotificationController extends Controller
                 ];
             });
 
+        $recentCutoff = now()->subMinutes(2);
 
         // Rejected products
         $rejectedProducts = Product::where('is_approved', 0)
@@ -88,8 +105,25 @@ class NotificationController extends Controller
                     'product_id' => $product->product_id,
                     'product_name' => $product->product_name,
                     'product_price' => $product->product_price,
+                    'rejection_reason' => $product->rejection_reason,
+                    'updated_at' => $product->updated_at, // ✅ ADD THIS LINE
                 ];
             });
+
+        $hasNewRejected = Product::where('user_id', $userId)
+            ->where('is_approved', 0)
+            ->where('updated_at', '>=', $recentCutoff)
+            ->exists();
+
+        $hasNewRequests = Booking::where('selleruser_id', $userId)
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->subMinute())
+            ->exists();
+
+        $hasBookingUpdates = Booking::where('buyeruser_id', $userId)
+            ->whereIn('status', ['approved', 'rejected'])
+            ->where('updated_at', '>=', now()->subMinute())
+            ->exists();
 
 
         return Inertia::render('Notifications', [
@@ -97,7 +131,10 @@ class NotificationController extends Controller
             'sellerNotifications' => $sellerNotifications,
             'rejectedProducts' => $rejectedProducts,
             'csrf_token' => csrf_token(),
-            'authUserId' => Auth::id() // ✅ Add this
+            'authUserId' => Auth::id(), // ✅ Add this
+            'hasNewRequests' => $hasNewRequests,         // 🔴 for seller tab
+            'hasBookingUpdates' => $hasBookingUpdates,
+            'hasNewRejected' => $hasNewRejected,
 
         ]);
     }

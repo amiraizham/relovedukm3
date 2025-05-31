@@ -39,14 +39,16 @@ class AdminController extends Controller
         return redirect()->route('admin.dashboard')->with('success', 'Product approved.');
     }
 
-    public function rejectProduct($id)
+    public function rejectProduct(Request $request, $id)
     {
         $product = Product::findOrFail($id);
         $product->is_approved = 0;
+        $product->rejection_reason = $request->input('reason');
         $product->save();
 
         return redirect()->route('admin.dashboard')->with('info', 'Product rejected.');
     }
+
 
 
     public function preview($id)

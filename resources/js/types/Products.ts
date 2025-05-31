@@ -8,6 +8,8 @@ export type Product = {
     image?: string;
     status?: 'available' | 'sold';
     created_at: string;
+    alreadyBooked?: boolean; 
+    approvedBooking?: boolean;
     user: {
       name: string;
       avatar?: string;

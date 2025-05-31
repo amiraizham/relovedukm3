@@ -102,7 +102,7 @@ export default function sellform() {
                 <SelectItem value="Electronics">Electronics</SelectItem>
                 <SelectItem value="Books">Books</SelectItem>
                 <SelectItem value="Sports">Sports</SelectItem>
-                <SelectItem value="Stationary">Stationary</SelectItem>
+                <SelectItem value="Accessories">Accessories</SelectItem>
                 <SelectItem value="Vehicle">Vehicle</SelectItem>
                 <SelectItem value="Others">Others</SelectItem>
                 </SelectContent>

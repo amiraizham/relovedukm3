@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { usePage, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Header from '@/components/header/Header';
 import { toast } from 'sonner';
+import ReasonModal from './ReasonModal';
 
 type Product = {
   id: number;
@@ -30,6 +31,32 @@ type PageProps = {
 
 export default function AdminDashboard() {
   const { pendingProducts } = usePage<PageProps>().props;
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+  const [selectedReason, setSelectedReason] = useState('');
+
+  const handleRejectClick = (id: number) => {
+    setSelectedProductId(id);
+    setShowModal(true);
+  };
+
+  const handleSubmitReason = () => {
+    if (selectedProductId !== null && selectedReason) {
+      router.post(
+        route('admin.products.reject', selectedProductId),
+        { reason: selectedReason },
+        {
+          onSuccess: () => toast.success("Product rejected."),
+          onError: () => toast.error("Failed to reject product."),
+        }
+      );
+      setShowModal(false);
+      setSelectedProductId(null);
+      setSelectedReason('');
+    } else {
+      toast.error("Please select a reason.");
+    }
+  };
 
   const handleApprove = (id: number) => {
     router.post(
@@ -41,22 +68,6 @@ export default function AdminDashboard() {
       }
     );
   };
-  
-
-  const handleReject = (id: number) => {
-    const confirmed = window.confirm("Are you sure you want to reject this product?");
-    if (confirmed) {
-      router.post(
-        route('admin.products.reject', id),
-        {},
-        {
-          onSuccess: () => toast.success("Product rejected successfully."),
-          onError: () => toast.error("Failed to reject product."),
-        }
-      );
-    }
-  };
-  
 
   return (
     <>
@@ -94,22 +105,21 @@ export default function AdminDashboard() {
                     <td className="px-4 py-2">{product.name}</td>
                     <td className="px-4 py-2">{product.user.email}</td>
                     <td className="px-4 py-2 space-x-2">
-                    <Button
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    onClick={() => handleApprove(product.id)}
-                    >
-                    Approve
-                    </Button>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleApprove(product.id)}
+                      >
+                        Approve
+                      </Button>
 
-                    <Button
-                    size="sm"
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                    onClick={() => handleReject(product.id)}
-                    >
-                    Reject
-                    </Button>
-
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => handleRejectClick(product.id)}
+                      >
+                        Reject
+                      </Button>
                     </td>
                     <td className="px-4 py-2">{product.created_at}</td>
                   </tr>
@@ -119,6 +129,16 @@ export default function AdminDashboard() {
           </table>
         </div>
       </Card>
+
+        <ReasonModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          onSubmit={handleSubmitReason}
+          selectedReason={selectedReason}
+          setSelectedReason={setSelectedReason}
+        />
+
+
     </>
   );
 }

@@ -1,79 +1,58 @@
 import { Head, Link } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Header from '@/components/header/Header';
 
 export default function Welcome({ auth }: any) {
   return (
     <>
-
-    <Header />
+      <Header />
       <Head title="Welcome" />
-      <div className="min-h-screen bg-gradient-to-br from-[#f7f0fa] to-[#ffe3ec] flex flex-col items-center justify-center px-6 py-12">
-        {/* Logo and Heading */}
-        <div className="mb-10 text-center">
-          <img src="/logo/relovedukm.svg" alt="RelovedUKM" className="mx-auto h-16 mb-4" />
-          <h1 className="text-4xl font-bold text-gray-800 mb-2">Welcome to RelovedUKM</h1>
-          <p className="text-gray-600 text-lg max-w-xl mx-auto">
-            A sustainable secondhand marketplace just for UKM students. Sell, buy, and support a greener campus!
-          </p>
-        </div>
 
-        {/* Feature Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl w-full">
-          <Card>
-            <CardHeader>
-              <CardTitle>Verified UKM Students</CardTitle>
-              <CardDescription>Every buyer and seller is part of the UKM family. No outsiders.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <img src="/icons/verify.svg" alt="Verified" className="w-14 h-14 mx-auto" />
-            </CardContent>
-          </Card>
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-[#f7f0fa] to-[#f6e5eb] flex flex-col items-center justify-center px-6 py-12 text-center">
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Eco-Friendly Shopping</CardTitle>
-              <CardDescription>Give items a second life. Help reduce waste and carbon footprint.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <img src="/icons/recycle.svg" alt="Eco" className="w-14 h-14 mx-auto" />
-            </CardContent>
-          </Card>
+      <h1 className="text-3xl font-bold text-pink-700 mb-4">
+          Welcome to
+        </h1>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Easy Listings</CardTitle>
-              <CardDescription>Snap, describe, and post. Your item is ready to be sold.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <img src="/icons/listing.svg" alt="List Item" className="w-14 h-14 mx-auto" />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Logo */}
+        <img
+          src="/relovedlogoukm.svg"
+          alt="RelovedUKM Logo"
+          className="h-24 w-auto mb-6"
+        />
 
-        {/* CTA Section */}
-        <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
+        {/* Description */}
+        <p className="text-sm text-muted-foreground max-w-xs mb-8">
+          A sustainable secondhand marketplace exclusively for UKM students.
+          Buy, sell, and support a greener campus community.
+        </p>
+
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 w-full max-w-xs">
           {auth.user ? (
-            <Link href={route('dashboard')}>
-              <Button className="text-white bg-[#E95670] hover:bg-[#c0445c]">Go to Dashboard</Button>
+            <Link href={route('dashboard')} className="w-full">
+              <Button className="w-full bg-pink-600 hover:bg-pink-700 text-white">
+                Go to Dashboard
+              </Button>
             </Link>
           ) : (
             <>
-              <Link href={route('login')}>
-                <Button variant="outline">Log In</Button>
+              <Link href={route('login')} className="w-full">
+                <Button
+                  variant="outline"
+                  className="w-full bg-white text-pink-600 hover:bg-pink-600 hover:text-white transition"
+                >
+                  Log In
+                </Button>
               </Link>
-              <Link href={route('register')}>
-                <Button className="bg-[#E95670] text-white hover:bg-[#c0445c]">Sign Up</Button>
+              <Link href={route('register')} className="w-full">
+                <Button className="w-full bg-pink-600 hover:bg-white hover:text-pink-600 text-white">
+                  Sign Up
+                </Button>
               </Link>
             </>
           )}
         </div>
-
-        {/* Footer */}
-        <footer className="mt-16 text-sm text-muted-foreground text-center">
-          Built with Laravel + Inertia.js | &copy; {new Date().getFullYear()} RelovedUKM
-        </footer>
       </div>
     </>
   );
