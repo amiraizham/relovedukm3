@@ -4,7 +4,8 @@ FROM php:8.2-fpm
 # Install system dependencies for PHP extensions, git, unzip, Node.js dependencies
 RUN apt-get update && apt-get install -y \
     git curl zip unzip libzip-dev libonig-dev libxml2-dev sqlite3 libsqlite3-dev \
-    gnupg2 ca-certificates
+    gnupg2 ca-certificates \
+    && rm -rf /var/lib/apt/lists/* # Clean up apt cache to reduce image size
 
 # Install Node.js (LTS) and npm
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
@@ -29,11 +30,18 @@ RUN composer install --no-dev --optimize-autoloader
 RUN npm install
 RUN npm run build
 
-# Optional: clear config cache
-RUN php artisan config:clear
+# Optional: You can remove this line as Railway injects env vars at runtime.
+# Laravel will read APP_URL directly from the environment.
+# RUN php artisan config:clear
 
-# Expose port 8000
-EXPOSE 8000
+# Copy a default Nginx configuration (if Railway doesn't auto-configure it)
+# This is often not needed as Railway usually handles Nginx for PHP-FPM
+# If you run into issues, you might need a separate Nginx container or
+# to configure Railway's proxy. For now, assume Railway handles it.
 
-# Start Laravel dev server
-CMD php artisan serve --host=0.0.0.0 --port=8000
+# Expose PHP-FPM port (default is 9000)
+EXPOSE 9000
+
+# Start PHP-FPM
+# This is the correct command for a production PHP-FPM container
+CMD ["php-fpm"]
