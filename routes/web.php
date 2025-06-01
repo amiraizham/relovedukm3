@@ -30,18 +30,7 @@ Route::get('/', function () {
 
 
 
-Route::get('/clear-cache/{secret}', function ($secret) {
-    if ($secret !== env('CACHE_CLEAR_SECRET')) {
-        abort(403);
-    }
 
-    Artisan::call('config:clear');
-    Artisan::call('route:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('view:clear');
-
-    return 'Caches cleared!';
-});
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
