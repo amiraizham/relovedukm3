@@ -98,7 +98,7 @@ Route::get('/email/verify', function () {
 })->middleware('auth')->name('verification.notice');
 
 Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
-    ->middleware(['signed'])  // no 'auth' here
+    ->middleware(['signed'])  // remove 'auth' middleware here
     ->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
