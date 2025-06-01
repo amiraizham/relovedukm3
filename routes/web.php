@@ -14,6 +14,7 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ReviewController;
 
 
@@ -94,11 +95,9 @@ Route::get('/email/verify', function () {
     return view('auth.verify-email');
 })->middleware('auth')->name('verification.notice');
 
-Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
-    $request->fulfill();
-
-    return redirect('/dashboard');
-})->middleware(['auth', 'signed'])->name('verification.verify');
+Route::get('/email/verify/{id}/{hash}', VerifyEmailController::class)
+    ->middleware(['signed'])  // no 'auth' here
+    ->name('verification.verify');
 
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
