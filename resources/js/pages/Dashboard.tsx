@@ -116,7 +116,7 @@ export default function Dashboard() {
                   ? hasResults
                     ? 'Showing matching results...'
                     : 'Try a different keyword.'
-                  : "Start buying now! Don't miss the deals."}
+                  : "Start purchasing now! Don't miss the deals."}
               </p>
             </div>
 
