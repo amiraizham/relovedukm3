@@ -27,17 +27,16 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 
 # Install Node.js dependencies and build assets
-RUN npm install
-RUN npm run build
+RUN npm install # Install Node.js dependencies
+RUN npm run build # Build frontend assets
 
-# Optional: You can remove this line as Railway injects env vars at runtime.
-# Laravel will read APP_URL directly from the environment.
-# RUN php artisan config:clear
-
-# Copy a default Nginx configuration (if Railway doesn't auto-configure it)
-# This is often not needed as Railway usually handles Nginx for PHP-FPM
-# If you run into issues, you might need a separate Nginx container or
-# to configure Railway's proxy. For now, assume Railway handles it.
+# Set appropriate permissions for Laravel's storage and cache directories
+# PHP-FPM typically runs as the www-data user
+RUN chown -R www-data:www-data /var/www/storage \
+    && chown -R www-data:www-data /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/storage \
+    && chmod -R 775 /var/www/bootstrap/cache \
+    && chmod -R 775 /var/www/public # Ensure public directory is executable for Nginx to serve assets
 
 # Expose PHP-FPM port (default is 9000)
 EXPOSE 9000
