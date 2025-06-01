@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 
 class VerifyEmailController extends Controller
@@ -21,15 +22,19 @@ class VerifyEmailController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            // Already verified, redirect to login or dashboard
-            return redirect()->route('login')->with('verified', 'Email already verified, please log in.');
+            // Already verified, log in and redirect to dashboard
+            Auth::login($user);
+            return redirect()->route('dashboard')->with('verified', 'Email already verified. Welcome back!');
         }
 
         // Mark email as verified
         $user->markEmailAsVerified();
         event(new Verified($user));
 
-        // Redirect to login page with success message
-        return redirect()->route('login')->with('verified', 'Your email has been verified! You may now log in.');
+        // Log in the user automatically
+        Auth::login($user);
+
+        // Redirect to dashboard with success message
+        return redirect()->route('dashboard')->with('verified', 'Your email has been verified! You are now logged in.');
     }
 }
