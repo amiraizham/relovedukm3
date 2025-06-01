@@ -2,15 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ImagePlus, MoreVertical } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { router } from "@inertiajs/react";
 import { toast } from 'sonner';
 import type { Conversation, User } from '@/types/Chat';
+import { X } from 'lucide-react';
+
 
 type Props = {
   selected: Conversation | null;
@@ -86,34 +82,6 @@ export default function ChatConversation({ selected, setSelected, authUser }: Pr
       {/* Header with delete menu */}
       <div className="bg-pink-700 text-white px-6 py-4 rounded-t-xl font-semibold text-base flex items-center justify-between">
         Chat with {other?.name}
-        {/* <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="text-white hover:text-gray-200">
-              <MoreVertical className="h-5 w-5" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-40 bg-white shadow-lg rounded-md" align="end">
-            <DropdownMenuItem
-              className="text-red-600 font-medium cursor-pointer"
-              onClick={() => {
-                if (confirm("Are you sure you want to delete this conversation?")) {
-                  router.delete(`/chat/${selected?.id}/delete`, {
-                    onSuccess: () => {
-                      toast.success('Chat deleted successfully!');
-                      router.reload({ only: ["conversations"] });
-                      setSelected(null);
-                    },
-                    onError: () => {
-                      toast.error('Failed to delete chat.');
-                    },
-                  });
-                }
-              }}
-            >
-              Delete Chat
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu> */}
       </div>
 {/* Scrollable Message Area */}
 <div className="flex-1 min-h-0 overflow-hidden">
@@ -133,12 +101,15 @@ export default function ChatConversation({ selected, setSelected, authUser }: Pr
             }`}
           >
             {m.photo && (
-              <img
+            <div className="mb-2">
+                <img
                 src={m.photo}
                 alt="Sent"
-                className="mb-2 rounded-lg max-w-[200px] border"
-              />
+                className="rounded-lg border max-w-[100%] md:max-w-[250px] h-auto object-cover shadow-sm"
+                />
+            </div>
             )}
+
             {m.message && <p>{m.message}</p>}
             <p className="text-[11px] text-right opacity-60 mt-1">
               {new Date(m.created_at).toLocaleString()}
@@ -153,32 +124,56 @@ export default function ChatConversation({ selected, setSelected, authUser }: Pr
 
       {/* Chat Input */}
       <form onSubmit={handleSend} className="p-4 border-t bg-white rounded-b-xl">
-        <div className="flex items-center gap-2">
-          <Input
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            placeholder="Type your message..."
-            className="text-sm flex-1"
-          />
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setPhoto(e.target.files?.[0] || null)}
-              className="hidden"
-            />
-            <div className="p-2 hover:bg-gray-100 rounded-md">
-              <ImagePlus className="w-5 h-5 text-pink-600" />
-            </div>
-          </label>
-          <Button
-            type="submit"
-            className="bg-pink-700 text-white px-4 hover:bg-pink-900"
-          >
-            Send
-          </Button>
-        </div>
-      </form>
+  <div className="flex items-center gap-2">
+    <Input
+      value={msg}
+      onChange={(e) => setMsg(e.target.value)}
+      placeholder="Type your message..."
+      className="text-sm flex-1"
+    />
+
+    <label className="cursor-pointer">
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setPhoto(e.target.files?.[0] || null)}
+        className="hidden"
+      />
+      <div className="p-2 hover:bg-gray-100 rounded-md">
+        <ImagePlus className="w-5 h-5 text-pink-600" />
+      </div>
+    </label>
+
+    <Button
+      type="submit"
+      className="bg-pink-700 text-white px-4 hover:bg-pink-900"
+    >
+      Send
+    </Button>
+  </div>
+
+  {/* 👇 Add preview below the input row */}
+  {photo && (
+  <div className="relative mt-3 ml-1 w-fit">
+    <img
+      src={URL.createObjectURL(photo)}
+      alt="Preview"
+      className="w-32 h-auto rounded-md border shadow-md"
+    />
+<button
+  type="button"
+  onClick={() => setPhoto(null)}
+  className="absolute -top-2 -right-2 bg-white rounded-full border border-gray-300 hover:bg-red-500 hover:text-white transition-all p-1"
+  title="Remove image"
+>
+  <X className="w-4 h-4" />
+</button>
+
+  </div>
+)}
+
+</form>
+
     </div>
   );
 }

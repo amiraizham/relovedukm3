@@ -7,6 +7,7 @@ import type { PageProps } from '@/types';
 import type { Conversation, User, Message } from '@/types/Chat';
 import { ArrowLeft } from 'lucide-react';
 
+
 type ChatProps = PageProps<{
   conversations?: Conversation[];
   conversation?: Conversation;
@@ -35,6 +36,7 @@ export default function ChatPage() {
   };
 
   const handleBack = () => setSelected(null);
+  
 
   return (
     <>

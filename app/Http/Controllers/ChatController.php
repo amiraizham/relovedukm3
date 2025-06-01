@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Events\MessageSent;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 
 class ChatController extends Controller
@@ -82,7 +83,7 @@ class ChatController extends Controller
             'conversation_id' => 'nullable|exists:conversations,id',
             'selleruser_id' => 'required|exists:users,id',
             'message' => 'nullable|string',
-            'photo' => 'nullable|image|max:5120',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         $senderId = Auth::id();
@@ -102,22 +103,35 @@ class ChatController extends Controller
         $message->message = $request->input('message');
 
         if ($request->hasFile('photo')) {
-            $file = $request->file('photo');
-            $fileKey = 'chat_photos/' . time() . '-' . $file->getClientOriginalName();
-            Storage::disk('s3')->put($fileKey, file_get_contents($file));
-            $message->photo = 'https://' . config('filesystems.disks.s3.bucket') .
-                '.s3.' . config('filesystems.disks.s3.region') .
-                '.amazonaws.com/' . $fileKey;
+            try {
+                $file = $request->file('photo');
+                $fileKey = 'chat_photos/' . time() . '-' . $file->getClientOriginalName();
+
+                $uploaded = Storage::disk('s3')->put($fileKey, fopen($file->getPathname(), 'r+'));
+
+                if (!$uploaded) {
+                    return back()->with('error', 'Image upload failed.');
+                }
+
+                $imageUrl = 'https://' . config('filesystems.disks.s3.bucket') .
+                    '.s3.' . config('filesystems.disks.s3.region') . '.amazonaws.com/' . $fileKey;
+
+                $message->photo = $imageUrl;
+            } catch (\Exception $e) {
+                Log::error('Chat image upload failed', ['error' => $e->getMessage()]);
+                return back()->with('error', 'Upload error: ' . $e->getMessage());
+            }
         }
 
         $message->is_read = false;
         $message->save();
 
-        broadcast(new MessageSent($message))->toOthers();
+        // broadcast(new MessageSent($message))->toOthers();
 
-        // ✅ Redirect to the conversation page again
         return to_route('chat.seller', ['selleruser_id' => $receiverId]);
     }
+
+
 
     public function showConversation($id)
     {

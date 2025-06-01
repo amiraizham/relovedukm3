@@ -315,8 +315,8 @@ const Header = ({ unreadChats }: HeaderProps) => {
             </>
           ) : (
             <>
-              <Link href={route("login")}><Button className="bg-pink-600 hover:bg-pink-700 text-white">Log In</Button></Link>
-              <Link href={route("register")}><Button variant="outline">Sign Up</Button></Link>
+              <Link href={route("login")}><Button className="bg-pink-600 text-white hover:bg-white hover:text-pink-600 ">Log In</Button></Link>
+              <Link href={route("register")}><Button className="bg-white text-pink-600 hover:bg-pink-600  hover:text-white"variant="outline">Sign Up</Button></Link>
             </>
           )}
         </div>
