@@ -16,7 +16,6 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use App\Http\Controllers\ReviewController;
-use Illuminate\Support\Facades\Artisan;
 
 
 Route::get('/', function () {
@@ -27,8 +26,6 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
-
-
 
 
 
