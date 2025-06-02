@@ -235,11 +235,9 @@ const Header = ({ unreadChats }: HeaderProps) => {
           </DropdownMenuItem>
         </>
       )}
-
     </DropdownMenuContent>
   </DropdownMenu>
 )}
-
   </div>
 </div>
 
@@ -331,28 +329,34 @@ const Header = ({ unreadChats }: HeaderProps) => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-white shadow-lg rounded-md">
-                <DropdownMenuItem asChild>        
-                {user?.id && (
-                  <Link href={route("profile.show", { id: user.id })}>
-                    <User className="mr-2 h-4 w-4" />
-                    {user.name}
-                  </Link>
+                {user.role === "admin" ? (
+                  <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Log Out
+                  </DropdownMenuItem>
+                ) : (
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href={route("profile.show", { id: user.id })}>
+                        <User className="mr-2 h-4 w-4" />
+                        {user.name}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href={route("profile.update")}>
+                        <EditIcon className="mr-2 h-4 w-4" />
+                        Edit Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log Out
+                    </DropdownMenuItem>
+                  </>
                 )}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href={route("profile.update")}>
-                  <EditIcon className="mr-2 h-4 w-4" />
-                  Edit Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log Out
-              </DropdownMenuItem>
-
-                </DropdownMenuContent>
+              </DropdownMenuContent>
               </DropdownMenu>
             </>
           ) : (
