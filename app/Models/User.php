@@ -2,24 +2,15 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Product;
-
+use App\Notifications\CustomVerifyEmail; // Import the custom notification
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -28,21 +19,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'bio',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -51,7 +32,16 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
+    /**
+     * Override the method to send the custom verification email.
+     */
+    public function sendEmailVerificationNotification()
+    {
+        // Send the custom verification email notification
+        $this->notify(new CustomVerifyEmail());
+    }
 
+    // Relationships
     public function favorites()
     {
         return $this->belongsToMany(Product::class, 'favorites', 'user_id', 'product_id')->withTimestamps();
@@ -59,12 +49,14 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function products()
     {
-        return $this->hasMany(\App\Models\Product::class, 'user_id');
+        return $this->hasMany(Product::class, 'user_id');
     }
+
     public function bookings()
     {
         return $this->hasMany(Booking::class, 'buyeruser_id');
     }
+
     public function reviews()
     {
         return $this->hasMany(Review::class, 'selleruser_id');
