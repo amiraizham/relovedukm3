@@ -16,17 +16,6 @@ class VerifyEmailController extends Controller
         // Find user by id
         $user = User::findOrFail($id);
 
-        // Verify the signature matches
-        if (! URL::hasValidSignature(request())) {
-            abort(403);
-        }
-
-        if ($user->hasVerifiedEmail()) {
-            // Already verified, log in and redirect to dashboard
-            Auth::login($user);
-            return redirect()->route('dashboard')->with('verified', 'Email already verified. Welcome back!');
-        }
-
         // Mark email as verified
         $user->markEmailAsVerified();
         event(new Verified($user));
