@@ -94,9 +94,16 @@ const Header = ({ unreadChats }: HeaderProps) => {
       {/* ✅ MOBILE HEADER */}
       <div className="flex md:hidden items-center justify-between px-4 py-2 bg-white shadow-sm border-b">
           {/* Center: Logo */}
-  <Link href={user ? "/dashboard" : "/"}>
-    <img src="/relovedlogoukm.svg" alt="Logo" className="h-6 w-auto" />
-  </Link>
+          <Link href={
+          user
+            ? user.role === "admin"
+              ? "/admin/dashboard"
+              : "/dashboard"
+            : "/"
+        }>
+          <img src="/relovedlogoukm.svg" alt="Logo" className="h-6 w-auto" />
+        </Link>
+
 
   {/* Right: Search */}
   {user && user.role !== "admin" && (
@@ -180,53 +187,78 @@ const Header = ({ unreadChats }: HeaderProps) => {
       </SheetContent>
     </Sheet>
 
-    {/* Profile Dropdown */}
-    {user && (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="h-9 w-9 flex items-center justify-center rounded-full border text-sm font-semibold bg-pink-100 text-pink-600">
-            {user.avatar ? (
-              <img src={user.avatar} alt="avatar" className="h-9 w-9 rounded-full object-cover" />
-            ) : (
-              getInitials(user.name)
-            )}
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="bg-white shadow-lg rounded-md ml-1 mt-1">
-          <DropdownMenuItem asChild>
-          {user?.id && (
-            <Link href={route("profile.show", { id: user.id })}>
-              <User className="mr-2 h-4 w-4" />
-              {user.name}
-              </Link>)}
+{/* Profile Dropdown */}
+{user && (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button className={clsx(
+        "h-9 w-9 flex items-center justify-center rounded-full border text-sm font-semibold bg-pink-100 text-pink-600 transition-all",
+        url.startsWith("/profile") && "ring-2 ring-pink-500"
+      )}>
+        {user.avatar ? (
+          <img src={user.avatar} alt="avatar" className="h-9 w-9 rounded-full object-cover" />
+        ) : (
+          getInitials(user.name)
+        )}
+      </button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end" className="bg-white shadow-lg rounded-md">
+      {/* Only show if the user is not an admin */}
+      {user.role === "admin" ? (
+        <>
+          <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Log Out
           </DropdownMenuItem>
+        </>
+      ) : (
+        <>
+          <DropdownMenuItem asChild>        
+            {user?.id && (
+              <Link href={route("profile.show", { id: user.id })}>
+                <User className="mr-2 h-4 w-4" />
+                {user.name}
+              </Link>
+            )}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
             <Link href={route("profile.update")}>
               <EditIcon className="mr-2 h-4 w-4" />
               Edit Profile
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
             <LogOut className="mr-2 h-4 w-4" />
             Log Out
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    )}
+        </>
+      )}
+
+    </DropdownMenuContent>
+  </DropdownMenu>
+)}
+
   </div>
-
-
 </div>
 
 
       {/* ✅ DESKTOP HEADER */}
       <div className="hidden md:flex items-center justify-between px-6 py-3 mt-3 mx-2 bg-white shadow-sm shadow-gray-300 border border-slate-200 rounded-full">
         {/* Logo */}
-        <Link href={user ? "/dashboard" : "/"}>
+        <Link href={
+          user
+            ? user.role === "admin"
+              ? "/admin/dashboard"
+              : "/dashboard"
+            : "/"
+        }>
           <div className="flex items-center gap-2 cursor-pointer">
             <img src="/relovedlogoukm.svg" alt="RelovedUKM Logo" className="h-8 w-auto" />
           </div>
         </Link>
+
 
         {/* Nav */}
         {user && (
@@ -299,17 +331,27 @@ const Header = ({ unreadChats }: HeaderProps) => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-white shadow-lg rounded-md">
-                  <DropdownMenuItem asChild>        
-                    {user?.id && (
+                <DropdownMenuItem asChild>        
+                {user?.id && (
                   <Link href={route("profile.show", { id: user.id })}>
                     <User className="mr-2 h-4 w-4" />
                     {user.name}
-                    </Link>)}
+                  </Link>
+                )}
               </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild><Link href={route("profile.update")}><EditIcon className="mr-2 h-4 w-4" />Edit Profile</Link></DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => router.post(route("logout"))}><LogOut className="mr-2 h-4 w-4" />Log Out</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href={route("profile.update")}>
+                  <EditIcon className="mr-2 h-4 w-4" />
+                  Edit Profile
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => router.post(route("logout"))}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Log Out
+              </DropdownMenuItem>
+
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
