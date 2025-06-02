@@ -7,6 +7,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\URL; // Add this line
 
 class VerifyEmailController extends Controller
 {
@@ -15,7 +16,16 @@ class VerifyEmailController extends Controller
      */
     public function __invoke(EmailVerificationRequest $request): RedirectResponse
     {
-        // Mark email as verified if not already verified
+        // Explicitly check for the signature (additional layer of security)
+        if (! $request->hasValidSignature()) {
+            abort(403, 'Invalid or expired verification link.');
+        }
+
+        // Re-authenticate the user if they were logged out during the redirect.
+        if (! Auth::check() || Auth::id() !== $request->user()->id) {
+            Auth::login($request->user());
+        }
+
         if ($request->user()->hasVerifiedEmail()) {
             return redirect()->intended(route('dashboard') . '?verified=1');
         }
@@ -24,7 +34,6 @@ class VerifyEmailController extends Controller
             event(new Verified($request->user()));
         }
 
-        // Redirect to the dashboard
         return redirect()->intended(route('dashboard') . '?verified=1');
     }
 }
