@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Booking extends Model
 {
-    protected $primaryKey = 'booking_id'; // if your primary key is booking_id
+    protected $primaryKey = 'booking_id';
 
     protected $fillable = [
         'product_id',

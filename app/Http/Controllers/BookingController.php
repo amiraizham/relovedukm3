@@ -14,19 +14,15 @@ use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-
-
     public function store($productId, Request $request)
     {
         set_time_limit(60);
         $user = Auth::user();
         $product = Product::findOrFail($productId);
 
-        // Auto-delete expired bookings older than 1 minute
         Booking::where('status', 'pending')
             ->where('created_at', '<', Carbon::now()->subSeconds(60)->toDateTimeString())
             ->delete();
-
 
         if ($product->user_id === $user->id) {
             return back()->with('error', 'You cannot book your own product.');
@@ -36,7 +32,6 @@ class BookingController extends Controller
             return back()->with('error', 'This product is already sold.');
         }
 
-        // 🚫 Prevent duplicate bookings by this user (except rejected ones)
         $userAlreadyBooked = Booking::where('product_id', $productId)
             ->where('buyeruser_id', $user->id)
             ->whereNotIn('status', ['rejected'])
@@ -46,7 +41,6 @@ class BookingController extends Controller
             return back()->with('error', 'You have already booked this item.');
         }
 
-        // ⏳ Check for existing active bookings within the last minute
         $activeBooking = Booking::where('product_id', $productId)
             ->whereNotIn('status', ['rejected', 'sold'])
             ->latest()
@@ -56,7 +50,6 @@ class BookingController extends Controller
             return back()->with('error', 'This product is temporarily booked. Try again later.');
         }
 
-        // ✅ Store new booking
         $booking = Booking::create([
             'product_id' => $product->product_id,
             'buyeruser_id' => $user->id,

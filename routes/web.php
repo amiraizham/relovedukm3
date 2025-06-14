@@ -67,6 +67,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/chat/{id}/delete', [ChatController::class, 'destroy'])->name('chat.delete');
     Route::get('/chat/conversation/{id}', [ChatController::class, 'showConversation'])->name('chat.conversation');
 
+    Route::get('/help', function () {
+        return Inertia::render('HelpPage');
+    })->name('help');
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/{status}', [NotificationController::class, 'updateStatus'])->name('notifications.updateStatus');

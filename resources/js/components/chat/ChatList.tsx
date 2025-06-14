@@ -73,8 +73,13 @@ export default function ChatList({ conversations = [], selected, authUserId, onS
                 )}
               </div>
               <div className="text-sm text-gray-500 truncate">
-                {last?.message || 'No messages yet'}
+              {last?.message
+                ? last.message
+                : last?.photo
+                ? '[Image]'
+                : 'No messages yet'}
               </div>
+
             </div>
           </div>
         );

@@ -8,8 +8,8 @@ class Message extends Model
 {
     protected $fillable = [
         'conversation_id',
-        'sender_id',  // changed from sender_matricnum
-        'receiver_id', // changed from receiver_matricnum
+        'sender_id',
+        'receiver_id',
         'message',
         'photo',
         'is_read',

@@ -83,21 +83,30 @@ class ProductController extends Controller
             return redirect()->route('login')->with('error', 'Please log in to sell products.');
         }
 
-        $request->validate([
-            'product_name' => 'required|string|max:255',
-            'product_desc' => 'required|string',
-            'product_price' => 'required|numeric|min:0',
-            'product_category' => 'required|string|max:255',
-            'product_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-        ]);
+        try {
+            $request->validate([
+                'product_name' => 'required|string|max:255',
+                'product_desc' => 'required|string',
+                'product_price' => 'required|numeric|min:0',
+                'product_category' => 'required|string|max:255',
+                'product_img' => 'required|image|mimes:jpeg,png,jpg,gif|max:8192', // Increased to 8MB
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->validator)->withInput();
+        }
 
         try {
             $file = $request->file('product_img');
+
+            if (!$file) {
+                return back()->with('error', 'No image was uploaded. Please try again.');
+            }
+
             $fileKey = 'products/' . time() . '-' . $file->getClientOriginalName();
             $uploaded = Storage::disk('s3')->put($fileKey, fopen($file->getPathname(), 'r+'));
 
             if (!$uploaded) {
-                return back()->with('error', 'Image upload failed.');
+                return back()->with('error', 'Image upload to S3 failed. Please try again.');
             }
 
             $imageUrl = 'https://' . config('filesystems.disks.s3.bucket') .
@@ -113,9 +122,8 @@ class ProductController extends Controller
                 'product_status' => 'available',
             ]);
 
-
             if ($product->is_approved === null) {
-                $adminUsers = User::where('role', 'admin')->pluck('email'); // get all admin emails
+                $adminUsers = User::where('role', 'admin')->pluck('email');
 
                 foreach ($adminUsers as $adminEmail) {
                     Mail::to($adminEmail)->send(new ProductApprovalMail($product));
@@ -124,10 +132,11 @@ class ProductController extends Controller
 
             return redirect()->route('dashboard')->with('success', 'Product submitted for approval.');
         } catch (\Exception $e) {
-            Log::error('S3 Upload Error', ['message' => $e->getMessage()]);
-            return back()->with('error', 'Upload failed: ' . $e->getMessage());
+            Log::error('Product Upload Error', ['message' => $e->getMessage()]);
+            return back()->with('error', 'Upload failed: ' . $e->getMessage())->withInput();
         }
     }
+
 
     //✅ Edit product
     public function edit($id)
@@ -143,8 +152,6 @@ class ProductController extends Controller
         ]);
     }
 
-
-    // ✅ Update product
     public function update(Request $request, $id)
     {
         $product = Product::findOrFail($id);
@@ -153,7 +160,16 @@ class ProductController extends Controller
             abort(403);
         }
 
-        // Only update fields that are filled (not null or empty string)
+        // ✅ Validate fields and image (max 8MB)
+        $request->validate([
+            'product_name' => 'nullable|string|max:255',
+            'product_desc' => 'nullable|string',
+            'product_price' => 'nullable|numeric|min:0',
+            'product_category' => 'nullable|string|max:255',
+            'product_img' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:8192',
+        ]);
+
+        // ✅ Only update filled fields
         $data = collect($request->only([
             'product_name',
             'product_desc',
@@ -163,22 +179,41 @@ class ProductController extends Controller
             return !is_null($value) && $value !== '';
         })->toArray();
 
-
         $product->update($data);
 
-
+        // ✅ Handle new image upload and delete old one
         if ($request->hasFile('product_img')) {
-            $file = $request->file('product_img');
-            $fileKey = 'products/' . time() . '-' . $file->getClientOriginalName();
-            Storage::disk('s3')->put($fileKey, fopen($file->getPathname(), 'r+'));
+            try {
+                // Extract old S3 path from full URL
+                $oldImageUrl = $product->product_img;
+                $bucket = config('filesystems.disks.s3.bucket');
+                $region = config('filesystems.disks.s3.region');
+                $baseUrl = "https://{$bucket}.s3.{$region}.amazonaws.com/";
+                $oldFileKey = str_replace($baseUrl, '', $oldImageUrl);
 
-            $product->product_img = 'https://' . config('filesystems.disks.s3.bucket') .
-                '.s3.' . config('filesystems.disks.s3.region') . '.amazonaws.com/' . $fileKey;
-            $product->save();
+                // ✅ Delete old image from S3
+                if ($oldFileKey && Storage::disk('s3')->exists($oldFileKey)) {
+                    Storage::disk('s3')->delete($oldFileKey);
+                }
+
+                // ✅ Upload new image
+                $file = $request->file('product_img');
+                $fileKey = 'products/' . time() . '-' . $file->getClientOriginalName();
+                Storage::disk('s3')->put($fileKey, fopen($file->getPathname(), 'r+'));
+
+                // ✅ Update DB with new image URL
+                $product->product_img = 'https://' . $bucket . '.s3.' . $region . '.amazonaws.com/' . $fileKey;
+                $product->save();
+            } catch (\Exception $e) {
+                Log::error('Product image update failed', ['message' => $e->getMessage()]);
+                return back()->with('error', 'Image upload failed. Please try again.');
+            }
         }
 
         return redirect()->route('products.show', $product->product_id)->with('success', 'Product updated!');
     }
+
+
 
     // ✅ Delete product
     public function delete($id)

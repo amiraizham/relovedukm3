@@ -181,7 +181,7 @@ const handleBookItem = (productId: number) => {
             <p className="text-gray-700">{product.description}</p>
 
             {/* Action Buttons */}
-            {product.user_id !== auth.user.id && (
+            {product.user_id !== auth.user.id && product.status !== 'sold' && (
             <div className="flex gap-4 pt-4">
               <Button
                 onClick={() => {
@@ -194,26 +194,24 @@ const handleBookItem = (productId: number) => {
                 Chat
               </Button>
 
-              {product.alreadyBooked || product.approvedBooking ? (
-              <Button
-                disabled
-                className="bg-gray-400 text-white cursor-not-allowed"
-              >
-                {product.approvedBooking ? 'Booking Approved' : 'Booked'}
-              </Button>
-            ) : (
-              <Button
-                onClick={() => handleBookItem(product.id)}
-                className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2"
-              >
-                Book Item
-              </Button>
-            )}
-
+              {product.approvedBooking ? (
+                <Button disabled className="bg-gray-400 text-white cursor-not-allowed">
+                  Booking Approved
+                </Button>
+              ) : product.alreadyBooked ? (
+                <Button disabled className="bg-gray-400 text-white cursor-not-allowed">
+                  Booked
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleBookItem(product.id)}
+                  className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2"
+                >
+                  Book Item
+                </Button>
+              )}
             </div>
           )}
-
-
           </div>
         </div>
       </div>

@@ -23,7 +23,7 @@ class ChatController extends Controller
             'seller',
             'buyer',
             'messages' => function ($q) {
-                $q->latest()->limit(1); // ✅ Fetch only the latest message
+                $q->latest()->limit(1);
             }
         ])
             ->where('selleruser_id', $userId)

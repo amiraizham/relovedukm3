@@ -28,28 +28,38 @@ export default function sellform() {
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0] ) {
-      setData('product_img', e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+  
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("Image is too large. Max allowed size is 8MB.");
+      return;
     }
+  
+    setData("product_img", file);
   };
+  
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-  
-    console.log("Resolved route:", route('products.store'));
-    // 👉 Add this to verify if the image is being captured
-    console.log("Image file before submission:", data.product_img);
-  
-    post(route('products.store'), {
-      forceFormData: true,
-      onSuccess: () => {
-        toast.success('Product submitted for approval!');
-      },
-      onError: () => {
-        toast.error('Failed to submit. Please check the form.');
-      },
-    });
-  };
+const submit = (e: React.FormEvent) => {
+  e.preventDefault();
+
+  post(route('products.store'), {
+    forceFormData: true,
+    onSuccess: () => {
+      toast.success('Product submitted for approval!');
+    },
+    onError: (errors) => {
+      console.error("Validation errors:", errors);
+
+      if (errors.product_img && errors.product_img.includes("kilobytes")) {
+        toast.error("❌ Image is too large. Please upload a file under 8MB.");
+      } else {
+        toast.error("❌ Failed to submit. Please check the form.");
+      }
+    },
+  });
+};
+
   
 
   return (
@@ -157,9 +167,10 @@ export default function sellform() {
               {errors.product_img && (
                 <p className="text-sm text-red-600">{errors.product_img}</p>
               )}
+
+            <p className="text-xs text-gray-500">Maximum image size: 8MB</p>
+
             </div>
-
-
 
 
             <Button asChild disabled={processing} className="w-full">
@@ -174,7 +185,6 @@ export default function sellform() {
               {processing ? 'Submitting...' : 'Submit Product'}
             </button>
           </Button>
-
 
         </form>
       </Card>

@@ -170,7 +170,10 @@ const Header = ({ unreadChats }: HeaderProps) => {
                     )}
                   </Button>
                 </Link>
-               
+
+                <Link href="/help">
+                  <Button variant="ghost" className="w-full justify-start">Help & FAQ</Button>
+                </Link>
               </>
             )
           ) : (
@@ -314,7 +317,15 @@ const Header = ({ unreadChats }: HeaderProps) => {
                   />
                 </form>
               )}
-              <HelpCircle className="w-5 h-5 text-muted-foreground cursor-pointer" />
+              <Link href="/help" aria-label="Help Page">
+                <HelpCircle
+                  className={clsx(
+                    "w-5 h-5 cursor-pointer transition-colors",
+                    url.startsWith("/help") ? "text-pink-600" : "text-muted-foreground hover:text-pink-600"
+                  )}
+                />
+              </Link>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className={clsx(
