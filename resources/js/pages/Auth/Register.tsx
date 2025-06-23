@@ -56,7 +56,7 @@ export default function Register() {
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Siswa Email</Label>
               <Input
                 id="email"
                 type="email"

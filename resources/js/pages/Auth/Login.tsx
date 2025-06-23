@@ -53,7 +53,7 @@ export default function Login({
 
           <form onSubmit={submit} className="space-y-5">
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Siswa Email</Label>
               <Input
                 id="email"
                 type="email"

@@ -119,14 +119,16 @@ export default function EditProduct() {
               <SelectTrigger id="product_category" className="w-full">
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="clothes">Clothes</SelectItem>
-                <SelectItem value="shoes">Shoes</SelectItem>
-                <SelectItem value="accessories">Accessories</SelectItem>
-                <SelectItem value="electronics">Electronics</SelectItem>
-                <SelectItem value="sports">Sports</SelectItem>
-                <SelectItem value="makeup">Makeup</SelectItem>
-              </SelectContent>
+             <SelectContent className="bg-white shadow-lg rounded-md">
+                <SelectItem value="Clothes">Clothes</SelectItem>
+                <SelectItem value="Shoes">Shoes</SelectItem>
+                <SelectItem value="Electronics">Electronics</SelectItem>
+                <SelectItem value="Books">Books</SelectItem>
+                <SelectItem value="Sports">Sports</SelectItem>
+                <SelectItem value="Accessories">Accessories</SelectItem>
+                <SelectItem value="Vehicle">Vehicle</SelectItem>
+                <SelectItem value="Others">Others</SelectItem>
+             </SelectContent>
             </Select>
             {errors.product_category && <p className="text-red-600 text-sm">{errors.product_category}</p>}
           </div>
