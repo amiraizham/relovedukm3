@@ -21,7 +21,7 @@ class BookingController extends Controller
         $product = Product::findOrFail($productId);
 
         Booking::where('status', 'pending')
-            ->where('created_at', '<', Carbon::now()->subSeconds(7200)->toDateTimeString())
+            ->where('created_at', '<', Carbon::now()->subMinutes(120)->toDateTimeString())
             ->delete();
 
         if ($product->user_id === $user->id) {
@@ -46,7 +46,9 @@ class BookingController extends Controller
             ->latest()
             ->first();
 
-        if ($activeBooking && Carbon::parse($activeBooking->created_at)->diffInMinutes(now()) < 1) {
+
+        // Check if a booking exists and is within the 2 hours window
+        if ($activeBooking && Carbon::parse($activeBooking->created_at)->diffInMinutes(now()) < 120) {
             return back()->with('error', 'This product is temporarily booked. Try again later.');
         }
 
