@@ -242,7 +242,7 @@ class ProductController extends Controller
 
         if ($activeBooking) {
             $bookingTime = Carbon::parse($activeBooking->created_at);
-            if ($bookingTime->diffInMinutes(now()) < 1) {
+            if ($bookingTime->diffInMinutes(now()) < 120) {
                 $alreadyBooked = true;
             }
 
@@ -251,7 +251,6 @@ class ProductController extends Controller
                 $approvedBooking = true;
             }
         }
-
 
         return Inertia::render('ProductDetail', [
             'product' => [
@@ -268,11 +267,12 @@ class ProductController extends Controller
                     'name' => $product->user->name,
                     'avatar' => $product->user->avatar ?? null, // optional fallback
                 ],
-                'alreadyBooked' => $alreadyBooked,
-                'approvedBooking' => $approvedBooking,
+                'alreadyBooked' => $alreadyBooked, // Specific to this product
+                'approvedBooking' => $approvedBooking, // Specific to this product
             ],
         ]);
     }
+
 
 
 

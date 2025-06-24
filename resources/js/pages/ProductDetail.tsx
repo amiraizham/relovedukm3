@@ -28,26 +28,11 @@ export default function ProductDetail() {
   const { product, auth, alreadyBooked, approvedBooking } = usePage<PageProps<{ product: Product }>>().props;
   const isOwner = product.user_id === auth.user.id;
   const [liked, setLiked] = useState<boolean>(false);
-  const [bookingTime, setBookingTime] = useState<number | null>(null);
 
 useEffect(() => {
   const saved = JSON.parse(localStorage.getItem('liked_products') || '[]');
   setLiked(saved.includes(product.id));
 }, [product.id]);
-
-useEffect(() => {
-  const savedBookingTime = localStorage.getItem('booking_time');
-  if (savedBookingTime) {
-    setBookingTime(parseInt(savedBookingTime, 10));
-  }
-}, []);
-
-useEffect(() => {
-  if (bookingTime) {
-    localStorage.setItem('booking_time', bookingTime.toString());
-  }
-}, [bookingTime]);
-
 
 const toggleFavorite = async () => {
   const saved = JSON.parse(localStorage.getItem('liked_products') || '[]');
@@ -85,16 +70,12 @@ const handleBookItem = (productId: number) => {
           },
         },
       });
-
-      // Store the booking time (current time in milliseconds)
-      setBookingTime(Date.now());
     },
     onError: () => {
       toast.error('Failed to book item. Please try again.');
     },
   });
 };
-
 
   return (
     <>
@@ -201,41 +182,37 @@ const handleBookItem = (productId: number) => {
 
             {/* Action Buttons */}
             {product.user_id !== auth.user.id && product.status !== 'sold' && (
-            <div className="flex gap-4 pt-4">
-              <Button
-                onClick={() => {
-                  router.visit(route('chat.seller', { selleruser_id: product.user_id }), {
+    <div className="flex gap-4 pt-4">
+        <Button
+            onClick={() => {
+                router.visit(route('chat.seller', { selleruser_id: product.user_id }), {
                     preserveScroll: true,
-                  });
-                }}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                Chat
-              </Button>
+                });
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white"
+        >
+            Chat
+        </Button>
 
-              {product.approvedBooking ? (
-                <Button disabled className="bg-gray-400 text-white cursor-not-allowed">
-                  Booking Approved
-                </Button>
-              ) : product.alreadyBooked ? (
-                <Button disabled className="bg-gray-400 text-white cursor-not-allowed">
-                  Booked
-                </Button>
-              ) : (
-                <Button
-
+        {product.approvedBooking ? (
+            <Button disabled className="bg-gray-400 text-white cursor-not-allowed">
+                Booking Approved
+            </Button>
+        ) : product.alreadyBooked ? (
+            <Button disabled className="bg-gray-400 text-white cursor-not-allowed">
+                Booked
+            </Button>
+        ) : (
+            <Button
                 onClick={() => handleBookItem(product.id)}
                 className="bg-pink-600 hover:bg-pink-700 text-white px-6 py-2"
-                disabled={bookingTime && Date.now() - bookingTime < 2 * 60 * 60 * 1000} // 2 hours in milliseconds
-              >
-                {bookingTime && Date.now() - bookingTime < 2 * 60 * 60 * 1000
-                  ? 'Booking in Progress'
-                  : 'Book Item'}
-              </Button>
-              
-              )}
-            </div>
-          )}
+            >
+                Book Item
+            </Button>
+        )}
+    </div>
+)}
+
           </div>
         </div>
       </div>
