@@ -21,7 +21,7 @@ class BookingController extends Controller
         $product = Product::findOrFail($productId);
 
         Booking::where('status', 'pending')
-            ->where('created_at', '<', Carbon::now()->subSeconds(60)->toDateTimeString())
+            ->where('created_at', '<', Carbon::now()->subSeconds(7200)->toDateTimeString())
             ->delete();
 
         if ($product->user_id === $user->id) {
