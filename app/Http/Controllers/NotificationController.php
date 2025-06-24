@@ -31,7 +31,7 @@ class NotificationController extends Controller
                 $query->where('status', '!=', 'pending') // show non-pending bookings
                     ->orWhere(function ($q) use ($now) {
                         $q->where('status', 'pending')
-                            ->where('created_at', '>=', $now->copy()->subMinute()); // only pending within 2 hours
+                            ->where('created_at', '>=', $now->copy()->subMinutes(120));  // only pending within 2 hours
                     });
             })
             ->orderBy('created_at', 'desc')
@@ -66,7 +66,7 @@ class NotificationController extends Controller
                 $query->where('status', '!=', 'pending') // keep sold/approved
                     ->orWhere(function ($q) use ($now) {
                         $q->where('status', 'pending')
-                            ->where('created_at', '>=', $now->copy()->subMinute()); // only pending within 2 hours
+                            ->where('created_at', '>=', $now->copy()->subMinutes(120)); // only pending within 2 hours
                     });
             })
             ->orderBy('created_at', 'desc')
